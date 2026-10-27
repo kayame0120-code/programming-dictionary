@@ -1,0 +1,587 @@
+{
+  "format": 1,
+  "meta": {
+    "title": "プログラミング辞書",
+    "updated": "2026-10-27",
+    "targets": ["Laravel 13（カノテネ・中心）", "Laravel 10（BookShelf）"]
+  },
+
+  "tags": [
+    {
+      "id": "php-request-get", "name": "受け取る", "lang": "php", "kind": "line",
+      "keywords": ["受け取"],
+      "slots": [
+        { "key": "var", "label": "入れる変数", "default": "keyword" },
+        { "key": "field", "label": "欄の名前", "default": "keyword" }
+      ],
+      "code": ["$《var》 = $request->《field》;"],
+      "tr": "送られてきた中身から 《field》 の値を取り出し、変数 《var》 に入れる",
+      "arg": "Request $request"
+    },
+    {
+      "id": "php-validate", "name": "確かめる", "lang": "php", "kind": "line",
+      "keywords": ["チェック", "確かめ"],
+      "slots": [
+        { "key": "rules", "label": "欄:決まり（,で区切る）", "default": "title:required|max:255, body:nullable" }
+      ],
+      "code": [
+        "$request->validate([",
+        { "each": "rules", "split": ":", "t": "    '《key》' => '《value》'," },
+        "]);"
+      ],
+      "tr": "《rules|keys|join_dot》 が決まりに合うか確かめる。合わなければ元の画面に戻してエラーを出す",
+      "arg": "Request $request"
+    },
+    {
+      "id": "php-auth-user", "name": "用意する", "lang": "php", "kind": "line",
+      "keywords": ["ログイン中", "用意"],
+      "slots": [{ "key": "var", "label": "入れる変数", "default": "user" }],
+      "code": ["$《var》 = Auth::user();"],
+      "tr": "ログイン中の人を取り出して、変数 《var》 に入れる",
+      "uses": ["use Illuminate\\Support\\Facades\\Auth;"]
+    },
+    {
+      "id": "php-find", "name": "1件取り出す", "lang": "php", "kind": "line",
+      "keywords": ["1件", "選んだ"],
+      "slots": [
+        { "key": "var", "label": "入れる変数", "default": "memo" },
+        { "key": "model", "label": "モデル", "default": "Memo" },
+        { "key": "id", "label": "番号の変数", "default": "id" }
+      ],
+      "code": ["$《var》 = 《model》::findOrFail($《id》);"],
+      "tr": "《model|table》 テーブルから番号 《id》 の1件を取り出し、変数 《var》 に入れる。無ければ「見つかりません」の画面にする",
+      "arg": "$id"
+    },
+    {
+      "id": "php-query", "name": "取り出し始め", "lang": "php", "kind": "chain_head",
+      "slots": [
+        { "key": "var", "label": "入れる変数", "default": "memos" },
+        { "key": "model", "label": "モデル", "default": "Memo" }
+      ],
+      "open": "$《var》 = 《model》::",
+      "empty": "$《var》 = 《model》::all();",
+      "tr": "《model|table》 テーブルから取り出す準備をして、結果を変数 《var》 に入れる"
+    },
+    {
+      "id": "php-when", "name": "条件付き", "lang": "php", "kind": "inner",
+      "slots": [
+        { "key": "cond", "label": "条件", "default": "$keyword" },
+        { "key": "pass", "label": "中に渡す値（空可）", "default": "" }
+      ],
+      "open": [
+        { "if": "pass", "t": "->when(《cond》, function($q, 《pass》) {" },
+        { "if": "!pass", "t": "->when(《cond》, function($q) {" }
+      ],
+      "close": "})",
+      "tr": "《cond》 が成り立つ時だけ、中の条件を足す"
+    },
+    {
+      "id": "php-wherehas", "name": "関係で絞る", "lang": "php", "kind": "inner",
+      "slots": [{ "key": "rel", "label": "つながりの名前", "default": "likes" }],
+      "open": "->whereHas('《rel》', function($q) {",
+      "close": "})",
+      "tr": "つながり 《rel》 の中に、条件に合うものがあるものだけに絞る"
+    },
+    {
+      "id": "php-where", "name": "絞り込む", "lang": "php", "kind": "chain",
+      "keywords": ["絞"],
+      "slots": [
+        { "key": "col", "label": "列", "default": "title" },
+        { "key": "op", "label": "比べ方", "default": "含む", "options": ["同じ", "違う", "含む"] },
+        { "key": "val", "label": "値", "default": "$keyword" }
+      ],
+      "code": [
+        { "if": "op=同じ", "t": "->where('《col》', 《val》)" },
+        { "if": "op=違う", "t": "->where('《col》', '!=', 《val》)" },
+        { "if": "op=含む", "t": "->where('《col》', 'like', '%' . 《val》 . '%')" }
+      ],
+      "tr": [
+        "列 《col》 が 《val》 ",
+        { "if": "op=同じ", "t": "と同じ" },
+        { "if": "op=違う", "t": "と違う" },
+        { "if": "op=含む", "t": "を含む" },
+        "ものに絞る"
+      ],
+      "note": "重ねた条件は、すべて同時に満たすものだけが残る（AND）"
+    },
+    {
+      "id": "php-with", "name": "まとめて取る", "lang": "php", "kind": "chain",
+      "keywords": ["まとめて"],
+      "slots": [{ "key": "rel", "label": "つながりの名前", "default": "user" }],
+      "code": ["->with('《rel》')"],
+      "tr": "つながり 《rel》 の中身も一度に取っておく",
+      "note": "with()：先にまとめて取る。無いと、画面で1件ごとに問い合わせが走る（N+1問題）"
+    },
+    {
+      "id": "php-get", "name": "実行する", "lang": "php", "kind": "chain",
+      "keywords": ["一覧を", "全部"],
+      "slots": [{ "key": "how", "label": "全部／1件", "default": "全部", "options": ["全部", "1件"] }],
+      "code": [
+        { "if": "how=全部", "t": "->get()" },
+        { "if": "how=1件", "t": "->first()" }
+      ],
+      "tr": [
+        "ここでDBに問い合わせを送り、",
+        { "if": "how=全部", "t": "結果をまとめて" },
+        { "if": "how=1件", "t": "最初の1件を" },
+        "受け取る"
+      ],
+      "note": "get()：全件を取る。ページ分けはしない"
+    },
+    {
+      "id": "php-create", "name": "保存する", "lang": "php", "kind": "line",
+      "keywords": ["保存"],
+      "slots": [
+        { "key": "model", "label": "モデル", "default": "Memo" },
+        { "key": "fields", "label": "保存する欄（,で区切る）", "default": "title, body" }
+      ],
+      "code": ["《model》::create($request->only([《fields|quote_list》]));"],
+      "tr": "送られてきた中身のうち 《fields|join_dot》 だけを使って、《model|table》 テーブルに1件保存する",
+      "arg": "Request $request"
+    },
+    {
+      "id": "php-update", "name": "直す", "lang": "php", "kind": "line",
+      "keywords": ["直", "更新"],
+      "slots": [
+        { "key": "var", "label": "直す変数", "default": "memo" },
+        { "key": "fields", "label": "直す欄（,で区切る）", "default": "title, body" }
+      ],
+      "code": ["$《var》->update($request->only([《fields|quote_list》]));"],
+      "tr": "変数 《var》 の1件を、送られてきた 《fields|join_dot》 で書き換えて保存する",
+      "arg": "Request $request"
+    },
+    {
+      "id": "php-delete", "name": "消す", "lang": "php", "kind": "line",
+      "keywords": ["消", "削除"],
+      "slots": [{ "key": "var", "label": "消す変数", "default": "memo" }],
+      "code": ["$《var》->delete();"],
+      "tr": "変数 《var》 の1件をテーブルから消す"
+    },
+    {
+      "id": "php-attach", "name": "付ける", "lang": "php", "kind": "line",
+      "keywords": ["付け"],
+      "slots": [
+        { "key": "var", "label": "誰の", "default": "user" },
+        { "key": "rel", "label": "つながりの名前", "default": "likes" },
+        { "key": "id", "label": "付ける番号", "default": "$item->id" }
+      ],
+      "code": ["$《var》->《rel》()->attach(《id》);"],
+      "tr": "変数 《var》 のつながり 《rel》 に、番号 《id》 を付ける（中間テーブルに1行足す）"
+    },
+    {
+      "id": "php-detach", "name": "外す", "lang": "php", "kind": "line",
+      "keywords": ["外し", "外す"],
+      "slots": [
+        { "key": "var", "label": "誰の", "default": "user" },
+        { "key": "rel", "label": "つながりの名前", "default": "likes" },
+        { "key": "id", "label": "外す番号", "default": "$item->id" }
+      ],
+      "code": ["$《var》->《rel》()->detach(《id》);"],
+      "tr": "変数 《var》 のつながり 《rel》 から、番号 《id》 を外す（中間テーブルの1行を消す）"
+    },
+    {
+      "id": "php-if", "name": "分かれる", "lang": "php", "kind": "if",
+      "keywords": ["もし", "分かれ"],
+      "slots": [{ "key": "cond", "label": "条件", "default": "$memo" }],
+      "open": "if (《cond》) {",
+      "else": "} else {",
+      "close": "}",
+      "tr": "もし 《cond》 なら上の処理、そうでなければ下の処理をする"
+    },
+    {
+      "id": "php-foreach", "name": "繰り返す", "lang": "php", "kind": "loop",
+      "keywords": ["1件ずつ", "繰り返"],
+      "slots": [
+        { "key": "list", "label": "並び", "default": "$memos" },
+        { "key": "item", "label": "1件の変数", "default": "memo" }
+      ],
+      "open": "foreach (《list》 as $《item》) {",
+      "close": "}",
+      "tr": "《list》 から1件ずつ取り出して、変数 《item》 に入れて中の処理をする"
+    },
+    {
+      "id": "php-return-view", "name": "渡す", "lang": "php", "kind": "line", "ends": true,
+      "keywords": ["画面に渡", "表示"],
+      "slots": [
+        { "key": "view", "label": "画面の名前", "default": "memos.index" },
+        { "key": "vars", "label": "渡す変数（,で区切る）", "default": "memos" }
+      ],
+      "code": [
+        { "if": "vars", "t": "return view('《view》', compact(《vars|quote_list》));" },
+        { "if": "!vars", "t": "return view('《view》');" }
+      ],
+      "tr": [
+        { "if": "vars", "t": "変数 《vars|join_dot》 を、" },
+        "画面 《view》 に渡して表示する"
+      ]
+    },
+    {
+      "id": "php-redirect", "name": "移動する", "lang": "php", "kind": "line", "ends": true,
+      "keywords": ["移動", "戻る", "へ移"],
+      "slots": [{ "key": "route", "label": "行き先のルート名（空なら元のページ）", "default": "" }],
+      "code": [
+        { "if": "route", "t": "return redirect()->route('《route》');" },
+        { "if": "!route", "t": "return redirect()->back();" }
+      ],
+      "tr": [
+        { "if": "route", "t": "名前 《route》 のルートへ移動する" },
+        { "if": "!route", "t": "元のページへ戻す" }
+      ]
+    },
+    {
+      "id": "php-json", "name": "返す", "lang": "php", "kind": "line", "ends": true,
+      "keywords": ["JSON"],
+      "slots": [{ "key": "var", "label": "返す変数", "default": "memos" }],
+      "code": ["return response()->json($《var》);"],
+      "tr": "変数 《var》 をJSONの形にして、取りに来た側に返す"
+    }
+  ],
+
+  "parts": [
+    {
+      "id": "php-view", "lang": "php",
+      "pattern": "view('《name》'",
+      "meaning": "画面のファイル resources/views/《name|path》.blade.php を使う"
+    },
+    {
+      "id": "php-compact", "lang": "php",
+      "pattern": "compact(《vars|quote_list》)",
+      "meaning": "同じ名前の変数を、名前付きでひとまとめにする"
+    },
+    {
+      "id": "php-return", "lang": "php",
+      "pattern": "return ",
+      "meaning": "この処理の結果として返す（ここで処理が終わる）"
+    }
+  ],
+
+  "method_names": [
+    { "id": "mname-store", "name": "store", "when": "保存を送った時", "guess_from": ["保存する"] },
+    { "id": "mname-update", "name": "update", "when": "直した内容を送った時", "guess_from": ["直す"] },
+    { "id": "mname-destroy", "name": "destroy", "when": "消すを送った時", "guess_from": ["消す"] },
+    { "id": "mname-show", "name": "show", "when": "詳しいページを開いた時", "guess_from": ["1件取り出す"] },
+    { "id": "mname-index", "name": "index", "when": "一覧ページを開いた時", "guess_default": true },
+    { "id": "mname-create", "name": "create", "when": "作る画面を開いた時" },
+    { "id": "mname-edit", "name": "edit", "when": "直す画面を開いた時" },
+    { "id": "mname-handle", "name": "handle*", "when": "ボタンなどを操作した時", "lang": "js" },
+    { "id": "mname-effect", "name": "useEffect", "when": "画面が出た時", "lang": "js" },
+    { "id": "mname-other", "name": "*", "when": "《name》が呼ばれた時" }
+  ],
+
+  "returns": [
+    { "id": "ret-view", "form": "画面 《name》", "code": "return view('《name》');" },
+    { "id": "ret-route", "form": "移動 《name》", "code": "return redirect()->route('《name》');" },
+    { "id": "ret-back", "form": "元のページ", "code": "return redirect()->back();" },
+    { "id": "ret-json", "form": "JSON 《var》", "code": "return response()->json($《var》);" }
+  ],
+
+  "elements": [
+    {
+      "id": "blade-heading", "name": "見出し", "lang": "blade", "place": "top",
+      "slots": [{ "key": "text", "label": "表示する文字", "default": "見出し" }],
+      "code": ["<h1 class=\"《page.blk》__title\">《text》</h1>"],
+      "tr": "見出し「《text》」を出す"
+    },
+    {
+      "id": "blade-input", "name": "入力欄", "lang": "blade", "place": "form",
+      "slots": [
+        { "key": "text", "label": "表示する文字", "default": "メールアドレス" },
+        { "key": "name", "label": "name", "default": "email" },
+        { "key": "type", "label": "種類（text/email/password）", "default": "text" }
+      ],
+      "code": [
+        "<div class=\"《page.blk》__group\">",
+        "    <label class=\"《page.blk》__label\" for=\"《name》\">《text》</label>",
+        { "if": ["page.old=する", "type!=password"], "t": "    <input class=\"《page.blk》__input\" type=\"《type》\" id=\"《name》\" name=\"《name》\" value=\"{{ old('《name》') }}\">" },
+        { "if": "page.old!=する", "t": "    <input class=\"《page.blk》__input\" type=\"《type》\" id=\"《name》\" name=\"《name》\">" },
+        { "if": ["page.old=する", "type=password"], "t": "    <input class=\"《page.blk》__input\" type=\"《type》\" id=\"《name》\" name=\"《name》\">" },
+        { "if": "page.err=する", "t": "    @error('《name》')" },
+        { "if": "page.err=する", "t": "        <p class=\"《page.blk》__error\">{{ $message }}</p>" },
+        { "if": "page.err=する", "t": "    @enderror" },
+        "</div>"
+      ],
+      "tr": "入力欄「《text》」（名前 《name》・種類 《type》）"
+    },
+    {
+      "id": "blade-button", "name": "ボタン", "lang": "blade", "place": "form",
+      "slots": [{ "key": "text", "label": "表示する文字", "default": "送信する" }],
+      "code": ["<button class=\"《page.blk》__button\" type=\"submit\">《text》</button>"],
+      "tr": "送信ボタン「《text》」"
+    },
+    {
+      "id": "blade-link", "name": "リンク", "lang": "blade", "place": "bottom",
+      "slots": [
+        { "key": "text", "label": "表示する文字", "default": "戻る" },
+        { "key": "href", "label": "行き先", "default": "/" }
+      ],
+      "code": ["<a class=\"《page.blk》__link\" href=\"《href》\">《text》</a>"],
+      "tr": "リンク「《text》」→ 《href》"
+    }
+  ],
+
+  "pages": [
+    {
+      "id": "page-method", "kind": "method", "lang": "php",
+      "head": { "label": "メソッド", "key": "name", "default": "index" },
+      "fields": [
+        { "key": "arg", "label": "引数", "default": "" },
+        { "key": "ret", "label": "戻り値", "default": "" },
+        { "key": "sum", "label": "まとめ", "default": "" }
+      ],
+      "tags_label": "札",
+      "empty_body": "// ここに中身を書く",
+      "code": ["public function 《name》(《arg》)", "{", "    《@body》", "}"]
+    },
+    {
+      "id": "rev-controller", "kind": "back", "lang": "php",
+      "head": { "label": "係", "key": "role", "default": "" },
+      "fields": [
+        { "key": "controller", "label": "コントローラー", "default": "名前Controller" },
+        { "key": "models", "label": "モデル", "default": "" },
+        { "key": "auth", "label": "認証", "default": "いる", "options": ["いる", "いらない"] },
+        { "key": "route", "label": "ルート", "default": "", "split": ["verb", "path"] }
+      ],
+      "method_page": "page-method",
+      "uses": [{ "each": "models", "t": "use App\\Models\\《one》;" }],
+      "uses_from_args": [{ "has": "Request", "t": "use Illuminate\\Http\\Request;" }],
+      "outputs": [
+        {
+          "title": "ルート：routes/web.php に足す1行",
+          "need": "route.path",
+          "missing": "ルートが空欄です。「送り方 URL」の形で埋めると、ここに1行出ます。",
+          "code": [
+            { "if": "auth=いる", "t": "Route::《route.verb|lower》('《route.path》', [《controller》::class, '《first_method》'])->middleware('auth');" },
+            { "if": "auth!=いる", "t": "Route::《route.verb|lower》('《route.path》', [《controller》::class, '《first_method》']);" }
+          ]
+        },
+        {
+          "title": "コントローラー：app/Http/Controllers/《controller》.php",
+          "code": [
+            "<?php", "",
+            "namespace App\\Http\\Controllers;", "",
+            "《@uses》", "",
+            "class 《controller》 extends Controller",
+            "{",
+            "    《@methods》",
+            "}"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "rev-blade", "kind": "front", "lang": "blade",
+      "head": { "label": "画面", "key": "screen", "default": "" },
+      "fields": [
+        { "key": "file", "label": "ファイル", "default": "" },
+        { "key": "layout", "label": "親レイアウト", "default": "layouts.app" },
+        { "key": "blk", "label": "クラス名", "default": "block" },
+        { "key": "send", "label": "送信先", "default": "", "split": ["verb", "path"] },
+        { "key": "old", "label": "入力を残す", "default": "する", "options": ["する", "しない"] },
+        { "key": "err", "label": "エラー表示", "default": "する", "options": ["する", "しない"] }
+      ],
+      "elements_label": "画面の要素",
+      "outputs": [
+        {
+          "title": "画面：《file》",
+          "code": [
+            "@extends('《layout》')", "",
+            "@section('content')",
+            "<div class=\"《blk》\">",
+            "    《@top》", "",
+            { "if": "send.path", "t": "    <form class=\"《blk》__form\" action=\"《send.path》\" method=\"《send.verb》\">" },
+            { "if": "send.path", "t": "        @csrf" }, "",
+            { "if": "send.path", "t": "        《@form》" },
+            { "if": "send.path", "t": "    </form>" }, "",
+            "    《@bottom》",
+            "</div>",
+            "@endsection"
+          ]
+        }
+      ],
+      "notes": [
+        { "if": "send.path", "code": "@csrf", "tr": "フォームに合言葉を入れる。無いと送った時に 419 Page Expired になる" },
+        { "if": "old=する", "code": "old('name')", "tr": "前に送った入力を、欄に残して表示する（パスワードの欄は残さない）" },
+        { "if": "err=する", "code": "@error('name')", "tr": "その欄で入力チェックに引っかかった時だけ、エラーの文言を出す" }
+      ]
+    }
+  ],
+
+  "error_sources": [
+    { "name": "CLI", "marks": ["command not found", "PHP Fatal error", "npm ERR!", "Permission denied"] },
+    { "name": "画面", "marks": ["419 Page Expired", "404 Not Found", "500 Server Error"] },
+    { "name": "コンソール", "marks": ["Uncaught TypeError", "Failed to fetch", "CORS"] },
+    { "name": "どこでも", "marks": ["SQLSTATE", "Class \""] }
+  ],
+
+  "errors": [
+    {
+      "id": "err-sql-42S02", "source": "どこでも",
+      "mark": "SQLSTATE[42S02]",
+      "extract": "Table '(?<db>[^.']+)\\.(?<table>[^']+)'",
+      "happened": [
+        "画面かコマンドから、Laravelが 《table》 のデータを取りに行った",
+        "Laravelが、DB（データの保管庫）《db》 に「《table》 という棚から出して」と頼んだ",
+        "《db》 の中に 《table》 という棚（テーブル）が無かった",
+        "Laravelがそこで止まって、このエラーを返した"
+      ],
+      "stopped": { "at": 3, "where": "DBに頼んだ時点", "ok": "コードの書き方は、ここまでは問題なく動いている" },
+      "causes": [
+        "migrateをまだ実行していない、または途中で失敗した",
+        "つないでいるDBが違う（Dockerの中と外で、別のDBを見ている）",
+        "棚の名前がズレている（モデルが探す名前と、設計図で作った名前が違う）"
+      ],
+      "steps": [
+        {
+          "cmd": "php artisan migrate:status",
+          "desc": "設計図ごとに、実行済みかどうかを一覧で出す",
+          "branches": [
+            { "label": "《table》 の行が Pending", "when": { "line_has": ["《table》", "Pending"] }, "go": "cause", "cause": 1, "text": "migrateがまだ済んでいない" },
+            { "label": "《table》 の行が Ran", "when": { "line_has": ["《table》", "Ran"] }, "go": "step", "step": 2 },
+            { "label": "《table》 の行が無い", "when": { "not_has": "《table》" }, "go": "cause", "cause": 1, "text": "《table》 の設計図そのものが無い" }
+          ]
+        },
+        {
+          "cmd": "docker compose exec （コンテナ名） php artisan migrate:status",
+          "desc": "同じ確認を、Dockerの中でやる",
+          "branches": [
+            { "label": "中では Pending", "when": { "line_has": ["《table》", "Pending"] }, "go": "cause", "cause": 2, "text": "Dockerの中と外で、別のDBを見ている" },
+            { "label": "中でも Ran", "when": { "line_has": ["《table》", "Ran"] }, "go": "step", "step": 3 }
+          ]
+        },
+        {
+          "cmd": "grep -rn \"Schema::create('《table》'\" database/migrations",
+          "desc": "設計図の中から、《table》 という名前を探す",
+          "branches": [
+            { "label": "何も出ない", "when": { "empty": true }, "go": "cause", "cause": 3, "text": "棚の名前がズレている" },
+            { "label": "見つかる", "when": { "has": "《table》" }, "go": "outside" }
+          ]
+        }
+      ]
+    }
+  ],
+
+  "headwords": [
+    { "word": "選んだ", "aliases": [] },
+    { "word": "取り出す", "aliases": ["出す", "持ってくる"] },
+    { "word": "ログイン", "aliases": [] },
+    { "word": "住所", "aliases": [] },
+    { "word": "用意", "aliases": [] },
+    { "word": "画面", "aliases": [] },
+    { "word": "渡す", "aliases": [] },
+    { "word": "一覧", "aliases": ["全部"] },
+    { "word": "保存", "aliases": ["登録"] }
+  ],
+
+  "questions": [
+    { "id": "name", "text": "この機能の名前（英語）は？", "type": "text", "default": "purchase" },
+    { "id": "info", "text": "画面に渡す「人の情報」に何を含める？", "type": "choice", "default": "A",
+      "options": [{ "v": "A", "label": "住所" }, { "v": "B", "label": "名前だけ" }] },
+    { "id": "where", "text": "住所はどこに持つ？", "type": "choice", "default": "A", "show_if": "info=A",
+      "options": [{ "v": "A", "label": "users テーブル" }, { "v": "B", "label": "別のテーブル" }] },
+    { "id": "has", "text": "住所の欄はもうある？", "type": "choice", "default": "B", "show_if": "info=A",
+      "options": [{ "v": "A", "label": "ある" }, { "v": "B", "label": "無い" }] }
+  ],
+
+  "step_order": ["マイグレーション", "モデル", "コントローラー", "ルート", "画面", "仕上げ"],
+
+  "file_steps": [
+    {
+      "id": "fs-controller-create", "kind": "コントローラー",
+      "title": "コントローラー：《name|ucfirst》Controller に create を足す",
+      "cmds": [{ "cmd": "php artisan make:controller 《name|ucfirst》Controller", "desc": "《name》の係のファイルを作る" }],
+      "where": "app/Http/Controllers/《name|ucfirst》Controller.php の上の use の並びと、class の中に貼る",
+      "lists": ["uses", "body", "vars"],
+      "code": [
+        "use App\\Models\\Item;",
+        "《@uses》", "",
+        "public function create(Item $item)",
+        "{",
+        "    《@body》",
+        "    return view('《name》.create', compact(《vars|quote_list》));",
+        "}"
+      ]
+    },
+    {
+      "id": "fs-route", "kind": "ルート",
+      "title": "ルート：URLと係をつなぐ",
+      "where": "routes/web.php に足す（上に use App\\Http\\Controllers\\《name|ucfirst》Controller; も足す）",
+      "lists": ["middleware"],
+      "code": ["Route::get('/《name》/{item}', [《name|ucfirst》Controller::class, 'create'])《middleware|concat》->name('《name》.create');"]
+    }
+  ],
+
+  "examples": [
+    {
+      "id": "ex-show", "text": "選んだものを1件取り出して、画面に渡す",
+      "words": ["選んだ", "取り出す", "画面", "渡す"],
+      "ask": ["name"],
+      "rows": [
+        { "words": ["選んだ", "取り出す"], "action": "URLの番号から1件取り出す", "files": "ルート・コントローラー" },
+        { "words": ["渡す"], "action": "画面に渡す", "files": "コントローラー" }
+      ],
+      "steps": [
+        { "to": "fs-controller-create", "add": { "vars": ["item"] } },
+        { "to": "fs-route", "add": {} }
+      ]
+    },
+    {
+      "id": "ex-authuser", "text": "ログイン中の人の情報を取り出して、画面に渡す",
+      "words": ["ログイン", "取り出す", "画面", "渡す", "住所", "用意"],
+      "ask": ["name", "info", "where", "has"],
+      "rows": [
+        { "if": ["info=A", "where=A", "has=B"], "fixed": "（住所の欄が無い）", "action": "テーブルに欄を足す", "files": "マイグレーション・モデル" },
+        { "words": ["ログイン", "住所", "用意"], "action": "ログイン中の人の情報を取り出す", "files": "コントローラー" },
+        { "words": ["渡す"], "action": "画面に渡す", "files": "コントローラー" }
+      ],
+      "steps": [
+        {
+          "if": ["info=A", "where=A", "has=B"], "kind": "マイグレーション",
+          "title": "マイグレーション：users テーブルに住所の欄を足す",
+          "cmds": [{ "cmd": "php artisan make:migration add_address_to_users_table --table=users", "desc": "usersテーブルに欄を足す設計図を作る" }],
+          "where": "できた database/migrations/…_add_address_to_users_table.php の up() の中に貼る",
+          "code": [
+            "Schema::table('users', function (Blueprint $table) {",
+            "    $table->string('postcode')->nullable();",
+            "    $table->string('address')->nullable();",
+            "    $table->string('building')->nullable();",
+            "});"
+          ]
+        },
+        {
+          "if": ["info=A", "where=A", "has=B"], "kind": "モデル",
+          "title": "モデル：User で住所の欄を書き込めるようにする",
+          "where": "app/Models/User.php の $fillable の中に足す",
+          "code": ["'postcode',", "'address',", "'building',"]
+        },
+        { "to": "fs-controller-create", "add": { "uses": ["use Illuminate\\Support\\Facades\\Auth;"], "body": ["$user = Auth::user();"], "vars": ["user"] } },
+        { "to": "fs-route", "add": {} },
+        {
+          "if": ["info=A", "where=A", "has=B"], "kind": "仕上げ",
+          "title": "仕上げ：設計図どおりにDBを作り変える",
+          "cmds": [{ "cmd": "php artisan migrate", "desc": "設計図どおりにDBを作り変える" }]
+        }
+      ]
+    },
+    {
+      "id": "ex-authonly", "text": "ログインしている人だけが開けるようにする",
+      "words": ["ログイン", "画面"],
+      "ask": [],
+      "rows": [
+        { "fixed": "（ログインしている人だけ）", "action": "未ログインならログイン画面へ飛ばす", "files": "ルート" }
+      ],
+      "steps": [
+        { "to": "fs-route", "add": { "middleware": ["->middleware('auth')"] } }
+      ]
+    },
+    {
+      "id": "ex-index", "text": "一覧を取り出して、画面に渡す",
+      "words": ["一覧", "取り出す", "画面", "渡す"],
+      "ask": [], "rows": [], "steps": []
+    },
+    {
+      "id": "ex-store", "text": "入力されたものをチェックして、保存する",
+      "words": ["保存"],
+      "ask": [], "rows": [], "steps": []
+    }
+  ]
+}

@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>プログラミング辞書</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="wrap">
+  <h1>プログラミング辞書</h1>
+  <div class="dict-err hide" id="dictErr" role="alert"></div>
+
+  <div class="tabs" role="tablist">
+    <button class="tab on" data-tab="code">コードの読み取り<kbd>Alt+1</kbd></button>
+    <button class="tab" data-tab="feat">機能解説<kbd>Alt+2</kbd></button>
+    <button class="tab" data-tab="err">エラー<kbd>Alt+3</kbd></button>
+  </div>
+
+  <div class="card">
+    <div class="card-h"><span>ここに文章を貼り付け</span></div>
+    <div class="inbox">
+      <textarea id="in" aria-label="ここに文章を貼り付け" spellcheck="false" placeholder="貼った瞬間に翻訳します"></textarea>
+      <div class="icons">
+        <button class="ib" id="clear" title="消す（Esc）" aria-label="消す"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 7h16M10 11v6M14 11v6M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg></button>
+        <button class="ib" id="edit" title="編集に戻る" aria-label="編集に戻る"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 20h4L19 9l-4-4L4 16v4zM13.5 6.5l4 4"/></svg></button>
+      </div>
+    </div>
+  </div>
+
+  <div class="judge" id="judge"></div>
+
+  <div class="card hide" id="featSteps"></div>
+
+  <div class="card">
+    <div class="card-h"><span>結果が出力</span><button class="copy" id="copy">コピー <kbd>Ctrl+Shift+Enter</kbd></button></div>
+    <div class="out" id="out"><div class="empty">まだ何も貼られていません</div></div>
+  </div>
+
+  <details id="missBox">
+    <summary>未登録の一覧（<span id="missN">0</span>件）</summary>
+    <ul id="missList" style="font-size:13px;padding-left:20px"></ul>
+    <button class="copy" id="missCopy">まとめてコピー（AIに「辞書に足して」と渡す形）</button>
+  </details>
+
+  <details id="stateBox">
+    <summary>辞書の状態（<span id="stateSum">読み込み中</span>）</summary>
+    <ul id="stateList" style="font-size:13px;padding-left:20px"></ul>
+  </details>
+
+  <div class="keys">
+    <kbd>Ctrl+Enter</kbd> 翻訳し直す　<kbd>Esc</kbd> 消す　<kbd>Ctrl+Shift+Enter</kbd> 全文コピー　<kbd>Alt+1〜3</kbd> タブ
+  </div>
+</div>
+<div class="toast" id="toast">コピーしました</div>
+
+<script src="js/engine.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

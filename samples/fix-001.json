@@ -1,0 +1,21 @@
+{
+  "format": 1,
+  "fix": "fix-001",
+  "items": [
+    {
+      "id": "php-where",
+      "field": "note",
+      "value": "【修正済み】重ねた条件は、すべて同時に満たすものだけが残る（AND）。どれか1つでよい時は orWhere を使う"
+    },
+    {
+      "add": "tags",
+      "value": {
+        "id": "php-count", "name": "数える", "lang": "php", "kind": "chain",
+        "keywords": ["数え", "件数"],
+        "slots": [],
+        "code": ["->count()"],
+        "tr": "ここでDBに問い合わせを送り、条件に合う件数だけを受け取る"
+      }
+    }
+  ]
+}
