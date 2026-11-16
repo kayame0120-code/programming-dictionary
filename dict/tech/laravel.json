@@ -1,0 +1,257 @@
+{
+  "format": 2,
+  "layer": "tech",
+  "note": "土台：Laravel の読み方の決まり。ファイルの種類と札は、アプリ×機能の束で足す",
+  "tech": {
+    "id": "laravel",
+    "name": "Laravel",
+    "lang": "php",
+    "lines_file": "file-controller",
+    "method_lang": true,
+    "default": true,
+    "default_version": "13",
+    "versions": [
+      {
+        "id": "8",
+        "name": "Laravel 8",
+        "marks": [
+          "^\\s*class\\s+\\w+\\s+extends\\s+Migration\\b",
+          "^\\s*public\\s+function\\s+(?:up|down|run|definition|register|boot|authorize|rules)\\(\\)\\s*$"
+        ]
+      },
+      {
+        "id": "10",
+        "name": "Laravel 10",
+        "marks": [
+          "protected\\s+\\$casts\\s*="
+        ]
+      },
+      {
+        "id": "13",
+        "name": "Laravel 13",
+        "marks": [
+          "protected\\s+function\\s+casts\\s*\\(",
+          "#\\[Fillable\\(",
+          "->withRouting\\("
+        ]
+      }
+    ]
+  },
+  "langs": {
+    "php": "PHP"
+  },
+  "lang_rules": {
+    "php": {
+      "pair": {
+        "head": "^[@<]?[\\w:-]+",
+        "after": "[\\s>(]",
+        "elif_after": "[\\s(]",
+        "else_not": "[\\w(]"
+      },
+      "strings": [
+        "'",
+        "\""
+      ],
+      "comments": [
+        {
+          "re": "\\{\\{--[\\s\\S]*?--\\}\\}"
+        },
+        {
+          "re": "\\/\\*[\\s\\S]*?\\*\\/"
+        },
+        {
+          "re": "(^|[^:'\"\\\\])\\/\\/[^\\n]*",
+          "keep": 1
+        }
+      ],
+      "skip_lines": [
+        "^<\\?php$",
+        "^namespace\\s"
+      ],
+      "imports": {
+        "skip": "^use\\s+[\\w\\\\]+(?:\\s+as\\s+\\w+)?;$",
+        "line": "^\\s*use\\s+([\\w\\\\]+(?:\\s+as\\s+\\w+)?)\\s*;\\s*$",
+        "class_start": "^\\s*(?:(?:final|abstract|readonly)\\s+)*class\\s+\\w|\\bnew\\s+class\\b",
+        "role": "use",
+        "show": "use 《name》;"
+      },
+      "chain": {
+        "after": "::\\s*$",
+        "strip": "->"
+      },
+      "closure": {
+        "open": "{",
+        "close": "}",
+        "end": "\\}\\s*\\)"
+      },
+      "call": "->\\s*(\\w+)\\s*\\(",
+      "method": "function\\s+\\w+\\s*\\(",
+      "code_marks": [
+        "[;{}$]",
+        "->",
+        "=>",
+        "::",
+        "^\\s*php\\b"
+      ],
+      "pair_kv": "^'([^']+)'\\s*=>\\s*([\\s\\S]+)$",
+      "uses_out": true,
+      "tool_label": "Laravel の道具",
+      "tool_names": "laravel_names",
+      "call_show": "->《name》()"
+    }
+  },
+  "filters": {
+    "quote_list": [
+      {
+        "split": "\\s*[,、]\\s*",
+        "each": [
+          {
+            "pick": [
+              {
+                "re": "^（[\\s\\S]*）$",
+                "to": "$&"
+              },
+              {
+                "re": "^([\\s\\S]*)$",
+                "to": "'$1'"
+              }
+            ]
+          }
+        ],
+        "join": ", "
+      }
+    ],
+    "pipe_list": [
+      {
+        "split": "\\s*\\|\\s*",
+        "each": [
+          {
+            "re": "^([\\s\\S]*)$",
+            "to": "'$1'"
+          }
+        ],
+        "join": ", "
+      }
+    ],
+    "table": [
+      {
+        "if_empty": ""
+      },
+      {
+        "re": "([a-z0-9])([A-Z])",
+        "to": "$1_$2",
+        "flags": "g"
+      },
+      {
+        "case": "lower"
+      },
+      {
+        "pick": [
+          {
+            "re": "([^aeiou])y$",
+            "to": "$1ies"
+          },
+          {
+            "re": "(s|x|ch|sh)$",
+            "to": "$1es"
+          },
+          {
+            "re": "$",
+            "to": "s"
+          }
+        ]
+      }
+    ],
+    "fk_table": [
+      {
+        "re": "_id$",
+        "to": ""
+      },
+      {
+        "pick": [
+          {
+            "re": "([^aeiou])y$",
+            "to": "$1ies"
+          },
+          {
+            "re": "(s|x|ch|sh)$",
+            "to": "$1es"
+          },
+          {
+            "re": "$",
+            "to": "s"
+          }
+        ]
+      }
+    ],
+    "model": [
+      {
+        "pick": [
+          {
+            "re": "ies$",
+            "to": "y"
+          },
+          {
+            "re": "s$",
+            "to": ""
+          }
+        ]
+      },
+      {
+        "re": "(?:^|_)([\\s\\S])",
+        "case": "upper",
+        "group": 1,
+        "flags": "g"
+      }
+    ],
+    "base": [
+      {
+        "re": "^\\\\?(?:\\w+\\\\)+",
+        "to": ""
+      }
+    ],
+    "ns_path": [
+      {
+        "if_empty": ""
+      },
+      {
+        "re": "^\\\\+",
+        "to": ""
+      },
+      {
+        "re": "^[^\\\\]+",
+        "case": "lower"
+      },
+      {
+        "re": "\\\\+",
+        "to": "/",
+        "flags": "g"
+      },
+      {
+        "re": "/*$",
+        "to": "/"
+      }
+    ]
+  },
+  "unfilters": {
+    "quote_list": {
+      "items": "'([^']*)'|\"([^\"]*)\"",
+      "join": ", "
+    },
+    "pipe_list": {
+      "items": "'([^']*)'|\"([^\"]*)\"",
+      "join": "|"
+    }
+  },
+  "roles": {
+    "method": "php-method",
+    "query": "php-query",
+    "request_get": "php-request-get",
+    "use": "php-use"
+  },
+  "positions": {
+    "uses": "use の並びの最後",
+    "class_end": "クラスの最後の } の直前"
+  },
+  "via_label": "Laravel 8 の書き方。13では "
+}

@@ -1,0 +1,65 @@
+{
+  "format": 2,
+  "layer": "tech",
+  "note": "土台：Blade の読み方の決まり。ファイルの種類と札は、アプリ×機能の束で足す",
+  "tech": {
+    "id": "blade",
+    "name": "Blade",
+    "lang": "blade",
+    "lines_file": "file-blade",
+    "front": true,
+    "family": "laravel",
+    "looks": "@(extends|section|if|foreach|csrf|error|yield)\\b|\\{\\{|^\\s*<[a-z!]"
+  },
+  "langs": {
+    "blade": "Blade"
+  },
+  "lang_rules": {
+    "blade": {
+      "pair": {
+        "head": "^[@<]?[\\w:-]+",
+        "after": "[\\s>(]",
+        "elif_after": "[\\s(]",
+        "else_not": "[\\w(]"
+      },
+      "comments": [
+        {
+          "re": "\\{\\{--[\\s\\S]*?--\\}\\}"
+        },
+        {
+          "re": "<!--[\\s\\S]*?-->"
+        },
+        {
+          "re": "\\/\\*[\\s\\S]*?\\*\\/"
+        },
+        {
+          "re": "(^|[^:'\"\\\\])\\/\\/[^\\n]*",
+          "keep": 1
+        }
+      ],
+      "self_close": "/>",
+      "code_marks": [
+        "[<>]"
+      ],
+      "css": {
+        "form": "file",
+        "tag_re": "<([a-zA-Z][\\w-]*)\\b([^>]*)>",
+        "class_re": "\\bclass\\s*=\\s*\"([^\"]*)\"",
+        "skip_class": "[{}()$@]",
+        "layout": "<html[\\s>]",
+        "own": "asset\\(\\s*'css\\/([\\w-]+)\\.css'\\s*\\)",
+        "fixed": [
+          "sanitize",
+          "common"
+        ],
+        "common": "common",
+        "fallback": "page",
+        "dir": "public/css/",
+        "ext": ".css"
+      }
+    }
+  },
+  "positions": {
+    "section": "@section('《section》') の中"
+  }
+}

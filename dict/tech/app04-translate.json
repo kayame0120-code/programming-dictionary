@@ -1,0 +1,960 @@
+{
+  "format": 2,
+  "layer": "tech",
+  "note": "app04×翻訳：app04 のファイルを読むのに要るファイルの種類",
+  "files": [
+    {
+      "id": "file-controller",
+      "name": "コントローラー",
+      "lang": "php",
+      "head": "controller",
+      "marks": [
+        "extends Controller"
+      ],
+      "path": "《ns|ns_path》《controller》.php",
+      "cmd": [
+        {
+          "if": "ns=App\\Http\\Controllers",
+          "t": "php artisan make:controller 《controller》"
+        },
+        {
+          "if": "ns!=App\\Http\\Controllers",
+          "t": "php artisan make:controller 《ns|ns_path》《controller》"
+        }
+      ],
+      "summary": "画面やURLから呼ばれる係。メソッド1つが、1つの操作（一覧・保存・削除など）を受け持つ",
+      "uses": [
+        {
+          "each": "models",
+          "t": "use App\\Models\\《one》;"
+        },
+        {
+          "each": "requests",
+          "t": "use App\\Http\\Requests\\《one》;"
+        },
+        {
+          "if": "ns!=App\\Http\\Controllers",
+          "t": "use App\\Http\\Controllers\\Controller;"
+        }
+      ],
+      "fields": [
+        {
+          "key": "controller",
+          "label": "名前",
+          "default": "TaskController",
+          "reads": [
+            "class\\s+(?<v>\\w+)\\s+extends\\s+Controller"
+          ]
+        },
+        {
+          "key": "ns",
+          "label": "住所（namespace）",
+          "default": "App\\Http\\Controllers",
+          "reads": [
+            "^namespace\\s+(?<v>[\\w\\\\]+);"
+          ],
+          "tr": "住所は 《ns》。ファイルの置き場所は 《ns|ns_path》 になる"
+        },
+        {
+          "key": "models",
+          "label": "使うモデル",
+          "default": "",
+          "reads_all": true,
+          "reads": [
+            "^use App\\\\Models\\\\(?<v>\\w+);"
+          ]
+        },
+        {
+          "key": "requests",
+          "label": "使う決まり",
+          "default": "",
+          "reads_all": true,
+          "reads": [
+            "^use App\\\\Http\\\\Requests\\\\(?<v>\\w+);"
+          ]
+        }
+      ],
+      "sections": [
+        {
+          "key": "methods",
+          "label": "メソッド"
+        }
+      ],
+      "code": [
+        "<?php",
+        "",
+        "namespace 《ns》;",
+        "",
+        "《@uses》",
+        "",
+        "class 《controller》 extends Controller",
+        "{",
+        "    《@methods》",
+        "}"
+      ],
+      "o": 0
+    },
+    {
+      "id": "file-blade",
+      "name": "Blade画面",
+      "lang": "blade",
+      "head": "view",
+      "marks": [
+        "@extends",
+        "@section",
+        "@yield",
+        "@csrf",
+        "@foreach"
+      ],
+      "path": [
+        {
+          "if": "view",
+          "t": "resources/views/《view|path》.blade.php"
+        },
+        {
+          "if": "!view",
+          "t": "resources/views/（画面の名前）.blade.php"
+        }
+      ],
+      "summary": [
+        {
+          "if": "layout",
+          "t": "外枠 《layout》 の差し込み口に、中身を入れる画面"
+        },
+        {
+          "if": "!layout",
+          "t": "ほかの画面が @extends で使う外枠"
+        }
+      ],
+      "fields": [
+        {
+          "key": "view",
+          "label": "画面の名前",
+          "default": ""
+        },
+        {
+          "key": "layout",
+          "label": "外枠",
+          "default": "layouts.app",
+          "reads": [
+            "@extends\\(\\s*'(?<v>[^']+)'\\s*\\)"
+          ]
+        }
+      ],
+      "sections": [
+        {
+          "key": "body",
+          "label": "中身"
+        }
+      ],
+      "code": [
+        {
+          "if": "layout",
+          "t": "@extends('《layout》')"
+        },
+        "",
+        "《@body》"
+      ],
+      "o": 1
+    },
+    {
+      "id": "file-migration",
+      "name": "マイグレーション",
+      "lang": "php",
+      "head": "table",
+      "marks": [
+        "extends Migration",
+        "Schema::create",
+        "Schema::table"
+      ],
+      "path": [
+        {
+          "if": "file",
+          "t": "database/migrations/（日付）_《file》.php"
+        },
+        {
+          "if": [
+            "!file",
+            "do=作る"
+          ],
+          "t": "database/migrations/（日付）_create_《table》_table.php"
+        },
+        {
+          "if": [
+            "!file",
+            "do=足す"
+          ],
+          "t": "database/migrations/（日付）_add_columns_to_《table》_table.php"
+        }
+      ],
+      "cmd": [
+        {
+          "if": "do=作る",
+          "t": "php artisan make:migration create_《table》_table"
+        },
+        {
+          "if": "do=足す",
+          "t": "php artisan make:migration add_columns_to_《table》_table --table=《table》"
+        }
+      ],
+      "summary": [
+        {
+          "if": "do=作る",
+          "t": "テーブル 《table》 を作る設計図。"
+        },
+        {
+          "if": "do=足す",
+          "t": "テーブル 《table》 にカラムを足す設計図。"
+        },
+        "php artisan migrate で、この形がDBに作られる"
+      ],
+      "fields": [
+        {
+          "key": "table",
+          "label": "テーブルの名前",
+          "default": "tasks",
+          "reads": [
+            "Schema::(?:create|table)\\(\\s*'(?<v>[^']+)'"
+          ]
+        },
+        {
+          "key": "do",
+          "label": "する事",
+          "default": "作る",
+          "options": [
+            "作る",
+            "足す"
+          ],
+          "reads": [
+            "Schema::(?<v>create|table)\\("
+          ],
+          "map": {
+            "create": "作る",
+            "table": "足す"
+          }
+        },
+        {
+          "key": "file",
+          "label": "設計図の名前（空なら決まりの名前）",
+          "default": ""
+        }
+      ],
+      "sections": [
+        {
+          "key": "cols",
+          "label": "カラム"
+        }
+      ],
+      "skel_reads": [
+        "class 《name》 extends Migration",
+        "public function up()",
+        "public function down()",
+        "$table->dropForeign([《cols》]);",
+        "$table->dropColumn(《cols》);"
+      ],
+      "code": [
+        "<?php",
+        "",
+        "use Illuminate\\Database\\Migrations\\Migration;",
+        "use Illuminate\\Database\\Schema\\Blueprint;",
+        "use Illuminate\\Support\\Facades\\Schema;",
+        "",
+        "return new class extends Migration",
+        "{",
+        "    public function up(): void",
+        "    {",
+        {
+          "if": "do=作る",
+          "t": "        Schema::create('《table》', function (Blueprint $table) {"
+        },
+        {
+          "if": "do=足す",
+          "t": "        Schema::table('《table》', function (Blueprint $table) {"
+        },
+        "            《@cols》",
+        "        });",
+        "    }",
+        "",
+        "    public function down(): void",
+        "    {",
+        {
+          "if": "do=作る",
+          "t": "        Schema::dropIfExists('《table》');"
+        },
+        {
+          "if": "do=足す",
+          "t": "        Schema::table('《table》', function (Blueprint $table) {"
+        },
+        {
+          "if": [
+            "do=足す",
+            "cols:name@php-mg-fk"
+          ],
+          "t": "            $table->dropForeign([《cols:name@php-mg-fk|quote_list》]);"
+        },
+        {
+          "if": "do=足す",
+          "t": "            $table->dropColumn([《cols:name|quote_list》]);"
+        },
+        {
+          "if": "do=足す",
+          "t": "        });"
+        },
+        "    }",
+        "};"
+      ],
+      "o": 2
+    },
+    {
+      "id": "file-model",
+      "name": "モデル",
+      "lang": "php",
+      "head": "model",
+      "marks": [
+        "extends Model",
+        "extends Authenticatable"
+      ],
+      "path": "app/Models/《model》.php",
+      "cmd": "php artisan make:model 《model》",
+      "summary": "テーブル 《model|table》 の1行を表す型。書き込んでいいカラムと、ほかのテーブルとのつながりを決める",
+      "uses": [
+        {
+          "if": "fillable",
+          "t": "use Illuminate\\Database\\Eloquent\\Attributes\\Fillable;"
+        },
+        {
+          "if": "factory=使う",
+          "t": "use Illuminate\\Database\\Eloquent\\Factories\\HasFactory;"
+        },
+        {
+          "if": "base=Model",
+          "t": "use Illuminate\\Database\\Eloquent\\Model;"
+        },
+        {
+          "if": "base=Authenticatable",
+          "t": "use Illuminate\\Foundation\\Auth\\User as Authenticatable;"
+        },
+        {
+          "if": "hidden",
+          "t": "use Illuminate\\Database\\Eloquent\\Attributes\\Hidden;"
+        },
+        {
+          "if": "traits~HasFactory",
+          "t": "use Illuminate\\Database\\Eloquent\\Factories\\HasFactory;"
+        },
+        {
+          "if": "traits~Notifiable",
+          "t": "use Illuminate\\Notifications\\Notifiable;"
+        },
+        {
+          "if": "traits~HasApiTokens",
+          "t": "use Laravel\\Sanctum\\HasApiTokens;"
+        }
+      ],
+      "fields": [
+        {
+          "key": "model",
+          "label": "モデル",
+          "default": "Task",
+          "reads": [
+            "class\\s+(?<v>\\w+)\\s+extends\\s+(?:Model|Authenticatable)\\b"
+          ]
+        },
+        {
+          "key": "base",
+          "label": "元にする型",
+          "default": "Model",
+          "options": [
+            {
+              "v": "Model",
+              "label": "ふつうのモデル"
+            },
+            {
+              "v": "Authenticatable",
+              "label": "ログインできる人のモデル"
+            }
+          ],
+          "reads": [
+            "class\\s+\\w+\\s+extends\\s+(?<v>Model|Authenticatable)\\b"
+          ],
+          "tr": "《base|label》（extends 《base》）"
+        },
+        {
+          "key": "fillable",
+          "label": "書き込んでいいカラム",
+          "default": "content",
+          "unfilter": "quote_list",
+          "item": "'《one》',",
+          "reads": [
+            "#\\[Fillable\\(\\[(?<v>[^\\]]*)\\]\\)\\]",
+            "protected\\s+\\$fillable\\s*=\\s*\\[(?<v>[^\\]]*)\\];"
+          ],
+          "via_note": {
+            "t": "Laravel 8 の書き方（$fillable）。13では",
+            "code": "#[Fillable([《fillable|quote_list》])]"
+          },
+          "tr": [
+            {
+              "if": "fillable",
+              "t": "外から一括で書き込んでいいカラムは 《fillable|join_dot》。ほかのカラムは create・update で無視される"
+            },
+            {
+              "if": "!fillable",
+              "t": "外から一括で書き込んでいいカラムは決めていない"
+            }
+          ]
+        },
+        {
+          "key": "factory",
+          "label": "工場（HasFactory）",
+          "default": "使う",
+          "options": [
+            "使う",
+            "使わない"
+          ],
+          "absent": "使わない",
+          "reads": [
+            "^[ \\t]*use\\s+(?<v>HasFactory);"
+          ],
+          "map": {
+            "HasFactory": "使う"
+          },
+          "tr": [
+            {
+              "if": "factory=使う",
+              "t": "工場（《model》Factory）で、でたらめな中身の行を作れる"
+            },
+            {
+              "if": "factory=使わない",
+              "t": "工場（HasFactory）は使わない"
+            }
+          ]
+        },
+        {
+          "key": "hidden",
+          "label": "外に出さないカラム",
+          "default": "",
+          "unfilter": "quote_list",
+          "reads": [
+            "#\\[Hidden\\(\\[(?<v>[^\\]]*)\\]\\)\\]",
+            "protected\\s+\\$hidden\\s*=\\s*\\[(?<v>[^\\]]*)\\];"
+          ],
+          "via_note": {
+            "t": "Laravel 8 の書き方（$hidden）。13では",
+            "code": "#[Hidden([《hidden|quote_list》])]"
+          },
+          "tr": [
+            {
+              "if": "hidden",
+              "t": "JSON などで外に出す時に隠すカラムは 《hidden|join_dot》"
+            }
+          ]
+        },
+        {
+          "key": "traits",
+          "label": "取り込む部品（2つ以上）",
+          "default": "",
+          "reads": [
+            "^[ \\t]*use\\s+(?<v>\\w+(?:\\s*,\\s*\\w+)+);"
+          ],
+          "tr": [
+            {
+              "if": "traits",
+              "t": "部品 《traits》 を取り込む"
+            }
+          ]
+        }
+      ],
+      "sections": [
+        {
+          "key": "rels",
+          "label": "つながり"
+        }
+      ],
+      "skel_reads": [
+        "protected $fillable = [",
+        "];"
+      ],
+      "code": [
+        "<?php",
+        "",
+        "namespace App\\Models;",
+        "",
+        "《@uses》",
+        "",
+        {
+          "if": "fillable",
+          "t": "#[Fillable([《fillable|quote_list》])]"
+        },
+        {
+          "if": "hidden",
+          "t": "#[Hidden([《hidden|quote_list》])]"
+        },
+        "class 《model》 extends 《base》",
+        "{",
+        {
+          "if": "factory=使う",
+          "t": "    use HasFactory;"
+        },
+        {
+          "if": "traits",
+          "t": "    use 《traits》;"
+        },
+        "",
+        "    《@rels》",
+        "}"
+      ],
+      "patches": [
+        {
+          "label": "書き込んでいいカラム",
+          "find": "#[Fillable([ で始まる行",
+          "start": "#[Fillable([",
+          "until": "line",
+          "code": [
+            "#[Fillable([《fillable|quote_list》])]"
+          ],
+          "field": "fillable"
+        }
+      ],
+      "o": 3
+    },
+    {
+      "id": "file-request",
+      "name": "決まり",
+      "lang": "php",
+      "head": "name",
+      "marks": [
+        "extends FormRequest"
+      ],
+      "path": "app/Http/Requests/《name》.php",
+      "cmd": "php artisan make:request 《name》",
+      "summary": "送られてきた中身の決まり。コントローラーの引数に 《name》 $request と書くと、メソッドが動く前に確かめる。合わなければ元の画面に戻してエラーを出す",
+      "fields": [
+        {
+          "key": "name",
+          "label": "名前",
+          "default": "TaskRequest",
+          "reads": [
+            "class\\s+(?<v>\\w+)\\s+extends\\s+FormRequest"
+          ]
+        },
+        {
+          "key": "who",
+          "label": "送れる人",
+          "default": "誰でも",
+          "options": [
+            "誰でも",
+            "ログインした人"
+          ],
+          "reads": [
+            "(?<=authorize\\(\\)[^{]*\\{(?:(?!\\bfunction\\b)[\\s\\S])*?)\\breturn\\s+(?<v>[^;]+);"
+          ],
+          "map": {
+            "true": "誰でも",
+            "$this->user() !== null": "ログインした人"
+          },
+          "tr": [
+            {
+              "if": "who=誰でも",
+              "t": "誰でも送れる"
+            },
+            {
+              "if": "who=ログインした人",
+              "t": "ログインした人だけ送れる。ほかは 403 になる"
+            },
+            {
+              "if": [
+                "who",
+                "who!=誰でも",
+                "who!=ログインした人"
+              ],
+              "t": "読めない決まり（return 《who》;）。この式が true の時だけ送れる。ほかは 403 になる"
+            }
+          ]
+        }
+      ],
+      "sections": [
+        {
+          "key": "rules",
+          "label": "欄の決まり"
+        },
+        {
+          "key": "msgs",
+          "label": "文言"
+        }
+      ],
+      "skel_reads": [
+        "public function authorize()",
+        "public function rules()",
+        "public function messages()"
+      ],
+      "code": [
+        "<?php",
+        "",
+        "namespace App\\Http\\Requests;",
+        "",
+        "use Illuminate\\Foundation\\Http\\FormRequest;",
+        "",
+        "class 《name》 extends FormRequest",
+        "{",
+        "    public function authorize(): bool",
+        "    {",
+        {
+          "if": "who=誰でも",
+          "t": "        return true;"
+        },
+        {
+          "if": "who=ログインした人",
+          "t": "        return $this->user() !== null;"
+        },
+        {
+          "if": [
+            "who",
+            "who!=誰でも",
+            "who!=ログインした人"
+          ],
+          "t": "        return 《who》;"
+        },
+        "    }",
+        "",
+        "    public function rules(): array",
+        "    {",
+        "        return [",
+        "            《@rules》",
+        "        ];",
+        "    }",
+        "",
+        "    public function messages(): array",
+        "    {",
+        "        return [",
+        "            《@msgs》",
+        "        ];",
+        "    }",
+        "}"
+      ],
+      "o": 4
+    },
+    {
+      "id": "file-route",
+      "name": "ルート",
+      "lang": "php",
+      "head": "file",
+      "marks": [
+        "Route::"
+      ],
+      "path": "routes/《file》.php",
+      "summary": "URL と、動かすコントローラーのメソッドをつなぐ表",
+      "uses": [
+        "use Illuminate\\Support\\Facades\\Route;"
+      ],
+      "fields": [
+        {
+          "key": "file",
+          "label": "ファイル",
+          "default": "web"
+        }
+      ],
+      "sections": [
+        {
+          "key": "routes",
+          "label": "並び",
+          "group": {
+            "slot": "who",
+            "on": "ログインした人",
+            "tag": "php-rt-auth"
+          }
+        }
+      ],
+      "code": [
+        "<?php",
+        "",
+        "《@uses》",
+        "",
+        "《@routes》"
+      ],
+      "o": 5
+    },
+    {
+      "id": "file-seeder",
+      "name": "初期データ",
+      "lang": "php",
+      "head": "name",
+      "marks": [
+        "extends Seeder"
+      ],
+      "path": "database/seeders/《name》.php",
+      "cmd": "php artisan make:seeder 《name》",
+      "summary": "php artisan db:seed（または migrate:fresh --seed）で、テーブルに最初のデータを入れる",
+      "uses": [
+        "use Illuminate\\Database\\Seeder;",
+        {
+          "if": "quiet=止める",
+          "t": "use Illuminate\\Database\\Console\\Seeds\\WithoutModelEvents;"
+        }
+      ],
+      "fields": [
+        {
+          "key": "name",
+          "label": "名前",
+          "default": "TaskSeeder",
+          "reads": [
+            "class\\s+(?<v>\\w+)\\s+extends\\s+Seeder"
+          ]
+        },
+        {
+          "key": "quiet",
+          "label": "モデルの合図を止める",
+          "default": "",
+          "options": [
+            "",
+            "止める"
+          ],
+          "reads": [
+            "^[ \\t]*use\\s+(?<v>WithoutModelEvents);"
+          ],
+          "map": {
+            "WithoutModelEvents": "止める"
+          },
+          "tr": [
+            {
+              "if": "quiet=止める",
+              "t": "初期データを入れる間は、モデルの合図（イベント）を止める"
+            }
+          ]
+        }
+      ],
+      "sections": [
+        {
+          "key": "body",
+          "label": "入れるもの"
+        }
+      ],
+      "skel_reads": [
+        "public function run()"
+      ],
+      "code": [
+        "<?php",
+        "",
+        "namespace Database\\Seeders;",
+        "",
+        "《@uses》",
+        "",
+        "class 《name》 extends Seeder",
+        "{",
+        {
+          "if": "quiet=止める",
+          "t": "    use WithoutModelEvents;"
+        },
+        {
+          "if": "quiet=止める",
+          "t": ""
+        },
+        "    public function run(): void",
+        "    {",
+        "        《@body》",
+        "    }",
+        "}"
+      ],
+      "o": 6
+    },
+    {
+      "id": "file-factory",
+      "name": "工場",
+      "lang": "php",
+      "head": "name",
+      "marks": [
+        "extends Factory"
+      ],
+      "path": "database/factories/《name》.php",
+      "cmd": "php artisan make:factory 《name》",
+      "summary": "でたらめな中身の行を、決まった形で大量に作る工場。Seeder の factory()->count() から使う",
+      "uses": [
+        "use Illuminate\\Database\\Eloquent\\Factories\\Factory;",
+        {
+          "each": "models",
+          "t": "use App\\Models\\《one》;"
+        }
+      ],
+      "fields": [
+        {
+          "key": "name",
+          "label": "名前",
+          "default": "TaskFactory",
+          "reads": [
+            "class\\s+(?<v>\\w+)\\s+extends\\s+Factory"
+          ]
+        },
+        {
+          "key": "models",
+          "label": "使うモデル",
+          "default": "",
+          "reads_all": true,
+          "reads": [
+            "^use App\\\\Models\\\\(?<v>\\w+);"
+          ]
+        }
+      ],
+      "sections": [
+        {
+          "key": "fields",
+          "label": "カラムの作り方"
+        }
+      ],
+      "skel_reads": [
+        "public function definition()"
+      ],
+      "code": [
+        "<?php",
+        "",
+        "namespace Database\\Factories;",
+        "",
+        "《@uses》",
+        "",
+        "class 《name》 extends Factory",
+        "{",
+        "    public function definition(): array",
+        "    {",
+        "        return [",
+        "            《@fields》",
+        "        ];",
+        "    }",
+        "}"
+      ],
+      "o": 7
+    },
+    {
+      "id": "file-fortify",
+      "name": "ログインの設定",
+      "lang": "php",
+      "head": "",
+      "marks": [
+        "Fortify::"
+      ],
+      "marks_weight": 5,
+      "path": "app/Providers/FortifyServiceProvider.php",
+      "summary": "composer require laravel/fortify で入れた Fortify に、ログイン・会員登録の画面と処理を割り当てる",
+      "uses": [
+        "use Illuminate\\Support\\ServiceProvider;",
+        "use Laravel\\Fortify\\Fortify;"
+      ],
+      "fields": [],
+      "sections": [
+        {
+          "key": "boot",
+          "label": "割り当て"
+        }
+      ],
+      "skel_reads": [
+        "public function register()",
+        "public function boot()"
+      ],
+      "code": [
+        "<?php",
+        "",
+        "namespace App\\Providers;",
+        "",
+        "《@uses》",
+        "",
+        "class FortifyServiceProvider extends ServiceProvider",
+        "{",
+        "    public function register(): void",
+        "    {",
+        "    }",
+        "",
+        "    public function boot(): void",
+        "    {",
+        "        《@boot》",
+        "    }",
+        "}"
+      ],
+      "o": 8
+    },
+    {
+      "id": "file-action",
+      "name": "Fortify の処理（Actions）",
+      "lang": "php",
+      "head": "name",
+      "marks": [
+        "implements CreatesNewUsers"
+      ],
+      "marks_weight": 6,
+      "path": "app/Actions/Fortify/《name》.php",
+      "summary": "会員登録などの時に Fortify が呼ぶ処理",
+      "uses": [
+        "use Laravel\\Fortify\\Contracts\\CreatesNewUsers;"
+      ],
+      "fields": [
+        {
+          "key": "name",
+          "label": "名前",
+          "default": "CreateNewUser",
+          "reads": [
+            "class\\s+(?<v>\\w+)\\s+implements"
+          ]
+        },
+        {
+          "key": "rules",
+          "label": "取り込む決まり",
+          "default": "",
+          "reads": [
+            "^[ \\t]*use\\s+(?<v>PasswordValidationRules);"
+          ],
+          "tr": [
+            {
+              "if": "rules",
+              "t": "パスワードの決まり（PasswordValidationRules）を取り込む"
+            }
+          ]
+        }
+      ],
+      "sections": [
+        {
+          "key": "methods",
+          "label": "メソッド"
+        }
+      ],
+      "skel_reads": [],
+      "code": [
+        "<?php",
+        "",
+        "namespace App\\Actions\\Fortify;",
+        "",
+        "《@uses》",
+        "",
+        "class 《name》 implements CreatesNewUsers",
+        "{",
+        {
+          "if": "rules",
+          "t": "    use 《rules》;"
+        },
+        "",
+        "    《@methods》",
+        "}"
+      ],
+      "o": 11
+    },
+    {
+      "id": "file-css",
+      "name": "CSS",
+      "lang": "css",
+      "head": "",
+      "marks": [],
+      "detect": "^\\s*(?:[.#:*a-zA-Z][^;{}\\n]*|@media[^{\\n]*)\\{\\s*$",
+      "detect_not": "<\\?php|<[a-zA-Z!]|@extends|@section|\\$\\w|=>",
+      "detect_weight": 4,
+      "path": "public/css/（名前）.css",
+      "summary": "画面の見た目の決まり。外枠が asset() で読む（ビルドしない）",
+      "fields": [],
+      "sections": [
+        {
+          "key": "rules",
+          "label": "決まり"
+        }
+      ],
+      "code": [
+        "《@rules》"
+      ],
+      "o": 14
+    }
+  ]
+}

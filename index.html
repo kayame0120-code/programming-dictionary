@@ -1,15 +1,17 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>プログラミング辞書</title>
+<meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 <div class="wrap">
   <h1>プログラミング辞書</h1>
-  <div class="dict-err hide" id="dictErr" role="alert"></div>
+
+  <div class="card dicterr hide" id="dictErr"></div>
 
   <div class="tabs" role="tablist">
     <button class="tab on" data-tab="code">コードの読み取り<kbd>Alt+1</kbd></button>
@@ -29,8 +31,11 @@
   </div>
 
   <div class="judge" id="judge"></div>
+  <div class="judge" id="premiseBar"><span>前提 <select id="premise" aria-label="前提（版・画面の技術）"><option value="auto">自動</option></select></span></div>
 
   <div class="card hide" id="featSteps"></div>
+
+  <div class="card hide" id="vals"></div>
 
   <div class="card">
     <div class="card-h"><span>結果が出力</span><button class="copy" id="copy">コピー <kbd>Ctrl+Shift+Enter</kbd></button></div>
@@ -46,6 +51,8 @@
   <details id="stateBox">
     <summary>辞書の状態（<span id="stateSum">読み込み中</span>）</summary>
     <ul id="stateList" style="font-size:13px;padding-left:20px"></ul>
+    <button class="copy" id="upBtn">JSONを選んで入れる</button>
+    <input type="file" id="upFile" accept=".json,application/json" multiple hidden>
   </details>
 
   <div class="keys">
@@ -53,8 +60,6 @@
   </div>
 </div>
 <div class="toast" id="toast">コピーしました</div>
-
-<script src="js/engine.js"></script>
-<script src="js/app.js"></script>
+<script src="js/loader.js"></script>
 </body>
 </html>
