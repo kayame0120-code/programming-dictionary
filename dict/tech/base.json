@@ -1,0 +1,95 @@
+{
+  "format": 2,
+  "layer": "tech",
+  "note": "土台：どの技術にも共通の決まり（作業の種類と決まった位置・エラーの出どころ・言い換えの形・1つだけの値・共通の名前の変え方）",
+  "kinds": {
+    "cmd": "コマンド",
+    "new": "b 新しいファイル",
+    "replace": "a 中身を全部置き換える",
+    "edit": "a 探して置き換える",
+    "add": "b 決まった位置に足す",
+    "css": "b CSS",
+    "check": "確かめる"
+  },
+  "positions": {
+    "new": "新しいファイル",
+    "end": "ファイルの最後"
+  },
+  "error_sources": [
+    "どこでも",
+    "CLI",
+    "画面",
+    "コンソール"
+  ],
+  "error_any": "どこでも",
+  "word_forms": {
+    "名前": "[A-Z]\\w*",
+    "大文字で始まる名前": "[A-Z]\\w*",
+    "変数": "\\w+"
+  },
+  "filters": {
+    "ucfirst": [
+      {
+        "re": "^.",
+        "case": "upper"
+      }
+    ],
+    "lcfirst": [
+      {
+        "re": "^.",
+        "case": "lower"
+      }
+    ],
+    "lower": [
+      {
+        "case": "lower"
+      }
+    ],
+    "path": [
+      {
+        "re": "\\.",
+        "to": "/",
+        "flags": "g"
+      }
+    ],
+    "join_dot": [
+      {
+        "split": "\\s*[,、]\\s*",
+        "join": "・"
+      }
+    ],
+    "concat": [
+      {
+        "split": "\\s*[,、]\\s*",
+        "join": ""
+      }
+    ],
+    "first": [
+      {
+        "split": "\\s*[,、]\\s*",
+        "first": true
+      }
+    ],
+    "keys": [
+      {
+        "split": "\\s*[,、]\\s*",
+        "each": [
+          {
+            "re": ":[\\s\\S]*$",
+            "to": ""
+          }
+        ],
+        "join": ", "
+      }
+    ],
+    "url_args": [
+      {
+        "match_all": "\\{[^}]+\\}",
+        "join": "・"
+      }
+    ]
+  },
+  "default_lang": "php",
+  "cmd_lang": "cmd",
+  "front_default": "blade"
+}

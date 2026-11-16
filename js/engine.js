@@ -1,1343 +1,705 @@
-/*
- * プログラミング辞書：計算の部分（画面に依存しない）
- * - 辞書JSONの書き方（ひな形・穴・フィルター・条件・行の並び）と、kind 6種類の組み立て方だけを持つ
- * - 札・エラー・例文ごとの書き方は持たない。中身は全部 dict/ のJSONから読む
- * ブラウザでは window.Engine、Node では require で使う
- */
-(function (root, factory) {
-  if (typeof module === 'object' && module.exports) module.exports = factory();
-  else root.Engine = factory();
-})(typeof self !== 'undefined' ? self : this, function () {
-  'use strict';
+/* ===== ①の道具：読む・照らし合わせる・組み立てる =====
+   言語・版・技術の決まりは持たない。決まりは全部、窓口がまとめた辞書（window.DICT）の②から読む */
+const DICT=window.DICT;
+const LR=l=>(DICT.lang_rules||{})[l]||{};
+const LANGS_WITH=k=>Object.keys(DICT.lang_rules||{}).filter(l=>LR(l)[k]);
+/* 前提（版・画面の技術）：画面の欄で選ぶ。自動の時は貼った物から見分ける */
+let PREMISE={sel:'auto',ver:null,front:null};
+const TECHS=()=>DICT.techs||[];
+const DEF_TECH=()=>TECHS().find(t=>t.default)||TECHS()[0]||{};
+const VER_TECH=()=>TECHS().find(t=>t.versions&&t.versions.length)||null;
+const FRONTS=()=>TECHS().filter(t=>t.front);
+const FRONT_DEF=()=>FRONTS().find(t=>t.id===DICT.front_default)||FRONTS()[0]||null;
+function premiseVersion(){return PREMISE.sel!=='auto'&&PREMISE.ver?PREMISE.ver:(PREMISE.autoVer||null)}
+function premiseFront(){return PREMISE.sel!=='auto'&&PREMISE.front?TECHS().find(t=>t.id===PREMISE.front):(PREMISE.autoFront?TECHS().find(t=>t.id===PREMISE.autoFront):FRONT_DEF())}
+/* 名前の変え方：②の filters に書いた手順を上から当てる */
+function runSteps(v,steps){
+ for(const st of steps){
+  if('if_empty' in st&&v==='')return st.if_empty;
+  if(st.split!=null){let items=v.split(new RegExp(st.split));if(st.trim)items=items.map(x=>x.trim());items=items.filter(Boolean);
+   if(st.each)items=items.map(x=>runSteps(x,st.each));if(st.first){v=items[0]||'';continue}v=items.join(st.join==null?', ':st.join);continue}
+  if(st.match_all!=null){v=(v.match(new RegExp(st.match_all,'g'))||[]).join(st.join==null?'':st.join);continue}
+  if(st.pick){for(const r of st.pick){const re=new RegExp(r.re,r.flags||'');if(re.test(v)){v=v.replace(re,r.to);break}}continue}
+  if(st.lookup){const arr=DICT[st.lookup]||[];const it=arr.find(x=>x&&x[st.key||'id']===v);v=it&&it[st.field]!=null?String(it[st.field]):'';continue}
+  if(st.re!=null){const re=new RegExp(st.re,st.flags||'');
+   if(st.case){const cf=st.case==='upper'?x=>x.toUpperCase():x=>x.toLowerCase();v=v.replace(re,(...a)=>cf(st.group?a[st.group]:a[0]))}
+   else v=v.replace(re,st.to);continue}
+  if(st.case)v=st.case==='upper'?v.toUpperCase():v.toLowerCase();
+ }
+ return v;
+}
+/* ===== 仕組み（プログラムが持つ決まり。中身は DICT から読む） ===== */
+const optV=o=>o&&typeof o==='object'?o.v:o;
+const plist=s=>String(s||'').split(/\s*[,、]\s*/).filter(Boolean);
+function applyF(v,f,ctx){
+ v=v==null?'':String(v);
+ if(f==='label'){const sl=(ctx.slots||[]).find(s=>s.key===ctx.key);const o=sl&&sl.options&&sl.options.find(o=>optV(o)===v);return o&&o.label?o.label:v}
+ if(f.startsWith('words:')){const g=(DICT.words[f.slice(6)]||{});
+  const one=r=>{const i=r.indexOf(':');const n=(i<0?r:r.slice(0,i)).trim(),a=i<0?'':r.slice(i+1);return wordFill(wordOf(g,n),a)||r};
+  return v.includes('|')?v.split('|').map(one).join('・'):one(v)}
+ const st=(DICT.filters||{})[f];
+ return st?runSteps(v,st):v;
+}
+/* 言い換えの表：ぴったり同じ → 形（見出しに《〇〇》を持つ） → * の順に当てる。形の《〇〇》の中身は word_forms に書く */
+function wordOf(g,n){
+ if(g[n]!==undefined)return {t:g[n],v:{name:n}};
+ const forms=DICT.word_forms||{};
+ for(const k of Object.keys(g)){
+  if(k==='*'||!/《/.test(k))continue;
+  const keys=[];
+  const re=new RegExp('^'+k.split(/(《[^》]+》)/).map(p=>{const m=p.match(/^《([^》]+)》$/);if(m){keys.push(m[1]);return '('+(forms[m[1]]||'.+?')+')'}return p.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}).join('')+'$');
+  const mm=String(n).match(re);
+  if(mm){const v={name:n};keys.forEach((kk,i)=>v[kk]=mm[i+1]);return {t:g[k],v}}
+ }
+ if(g['*']!==undefined)return {t:g['*'],v:{name:n}};
+ return null;
+}
+const wordFill=(w,a)=>w?w.t.replace(/《arg》/g,a||'').replace(/《([^》]+)》/g,(m,k)=>w.v[k]!==undefined?w.v[k]:m):null;
+const tv=v=>Array.isArray(v)?v.length>0:!!v;
+function condOk(c,get){
+ if(!c)return true;
+ return [].concat(c).every(x=>{let m;
+  if(/\|/.test(x)&&!/[=~^!]/.test(x))return x.split('|').some(k=>tv(get(k)));
+  if(m=x.match(/^(.+?)\^=(.*)$/))return String(get(m[1])||'').startsWith(m[2]);
+  if(m=x.match(/^(.+?)~(.*)$/))return String(get(m[1])||'').includes(m[2]);
+  if(m=x.match(/^(.+?)!=(.*)$/))return (get(m[1])||'')!==m[2];
+  if(m=x.match(/^(.+?)=(.*)$/))return (get(m[1])||'')===m[2];
+  if(x[0]==='!')return !tv(get(x.slice(1)));
+  return tv(get(x))});
+}
+/* 表の形の値（行の並び）は、has:欄（その欄が空でない行）・not:欄（空の行）・is:欄=値 で行を絞り、col:欄（無ければ name）を「, 」でつなぐ */
+function fillVal(v,fs,ctx,k){
+ if(Array.isArray(v)){let rows=v,col='name';const rest=[];
+  fs.forEach(f=>{let m;if(m=f.match(/^has:(.+)$/))rows=rows.filter(r=>r[m[1]]!=null&&String(r[m[1]]).trim()!=='');else if(m=f.match(/^not:(.+)$/))rows=rows.filter(r=>r[m[1]]==null||String(r[m[1]]).trim()==='');else if(m=f.match(/^is:(\w+)=(.*)$/))rows=rows.filter(r=>String(r[m[1]]==null?'':r[m[1]])===m[2]);else if(m=f.match(/^ne:(\w+)=(.*)$/))rows=rows.filter(r=>String(r[m[1]]==null?'':r[m[1]])!==m[2]);else if(m=f.match(/^col:(.+)$/))col=m[1];else rest.push(f)});
+  v=rows.map(r=>r[col]==null?'':String(r[col])).filter(Boolean).join(', ');fs=rest}
+ v=v==null?'':v;fs.forEach(f=>{v=applyF(v,f,{...ctx,key:k})});
+ /* 作業の地図で、値の一覧の値が空の時は、その値の名前をかっこで出す（D28）。表の行の欄（r.〇〇）には使わない */
+ if(v===''&&PH&&!/^(r\.|one$|i$)/.test(k)){const p=PH(k);if(p)v=p}
+ return v;
+}
+let PH=null;
+function fill(s,get,ctx){return s.replace(/《([^》|]+)((?:\|[^》|]+)*)》/g,(_,k,fs)=>fillVal(get(k),fs.split('|').filter(Boolean),ctx,k))}
+function tplLines(tpl,get,ctx){
+ const out=[];
+ [].concat(tpl||[]).forEach(x=>{
+  if(typeof x==='string'){out.push(fill(x,get,ctx));return}
+  if(x.each){const v=get(x.each);(Array.isArray(v)?v:plist(v).map(one=>({one,name:one}))).forEach((row,ri)=>{const g=k=>k==='one'?String(row.one!=null?row.one:(row.name||'')):k==='i'?String(ri+1):k.startsWith('r.')?(row[k.slice(2)]==null?'':String(row[k.slice(2)])):get(k);if(condOk(x.if,g))out.push(fill(x.t,g,ctx))});return}
+  if(!condOk(x.if,get))return;
+  out.push(fill(x.t,get,ctx))});
+ return out;
+}
+const tplText=(tpl,get,ctx)=>tplLines(tpl,get,ctx).join('');
+const T=id=>DICT.tags.find(t=>t.id===id);
+const F=id=>DICT.files.find(f=>f.id===id);
+
+/* ===== 札の木 → コード ===== */
+function flat(ns){return (ns||[]).flatMap(n=>[n,...flat(n.kids),...flat(n.elifs),...flat(n.els)])}
+const nodeGet=n=>k=>n.o[k];
+const UNCLOSED='閉じ忘れの';
+function renderSec(nodes,ind,trs,depth){
+ const L=[];
+ (nodes||[]).forEach((n,i)=>{
+  const t=n.tag&&T(n.tag);
+  const prev=i>0&&nodes[i-1].tag?T(nodes[i-1].tag):null;
+  if(i>0&&((t&&t.gap)||(prev&&prev.gap)))L.push('');
+  if(!t&&n.ph){L.push(ind+n.name);return}
+  if(!t){if(n.tool){if(trs)trs.push({tool:true,name:n.name,orig:n.orig,depth});return}
+   MISS_TAGS.push(n.name);if(trs)trs.push({miss:true,name:n.name,depth});return}
+  const get=nodeGet(n),ctx={slots:t.slots};
+  const tr=()=>tplText(t.tr,get,ctx);
+  /* 閉じが見つからなかった開きの行：開きの行だけをそのまま出す（閉じは足さない） */
+  if(n.unclosed||n.selfclose){
+   const op=tplLines(t.open,get,ctx);op.forEach(x=>L.push(ind+x));
+   if(trs)trs.push({code:op.join('\n'),tr:tr(),tag:t,depth,orig:n.orig,unclosed:!!n.unclosed});
+   L.push(...renderSec(n.kids,ind,trs,depth));
+   return;
+  }
+  if(t.kind==='chain_head'){
+   let s=tplText(t.code,get,ctx);const kt=[];
+   const multi=(n.kids||[]).some(k=>k.tag&&T(k.tag).kind==='chain_block'),ind2=ind+'    ';
+   (n.kids||[]).forEach(k=>{const c=k.tag&&T(k.tag);if(!c){kt.push(k.tool?{tool:true,name:k.name,orig:k.orig,depth:depth+1}:{miss:true,name:k.name,depth:depth+1});return}
+    const kc={slots:c.slots},kg=nodeGet(k);
+    if(c.kind==='chain_block'){
+     const op=tplText(c.open,kg,kc),inTr=[],inner=renderSec(k.kids,ind2+'    ',trs?inTr:null,depth+2);
+     s+='\n'+ind2+op+(inner.length?'\n'+inner.join('\n'):'')+'\n'+ind2+tplText(c.close,kg,kc);
+     kt.push({code:op,tr:tplText(c.tr,kg,kc),tag:c,depth:depth+1,orig:k.orig,via:k.via},...inTr);return}
+    const part=tplText(c.code,kg,kc);s+=(multi?'\n'+ind2:'')+part;kt.push({code:part,tr:tplText(c.tr,kg,kc),tag:c,depth:depth+1,orig:k.orig,via:k.via})});
+   L.push(ind+s+';');
+   if(trs){trs.push({code:s+';',tr:tr(),tag:t,depth,orig:n.orig,via:n.via,note:n.note});trs.push(...kt)}
+   return;
+  }
+  if(t.kind==='block'||t.kind==='if'){
+   const op=tplLines(t.open,get,ctx);
+   op.forEach(x=>L.push(ind+x));
+   if(trs)trs.push({code:op.join('\n'),tr:tr(),tag:t,depth,orig:n.orig,via:n.via,note:n.note});
+   L.push(...renderSec(n.kids,ind+'    ',trs,depth+1));
+   /* 分かれる札の後半（elseif …）：何段でも */
+   if(t.kind==='if'&&t.elif)(n.elifs||[]).forEach(e=>{const eg=nodeGet(e),ec=tplText(t.elif,eg,ctx);L.push(ind+ec);
+    if(trs)trs.push({code:ec,tr:tplText(t.elif_tr||'そうでなければ、もし 《cond》 なら下の処理をする',eg,ctx),tag:t,depth,els:true,orig:e.orig});
+    L.push(...renderSec(e.kids,ind+'    ',trs,depth+1))});
+   if(t.kind==='if'&&n.els&&n.els.length){L.push(ind+tplText(t.else,get,ctx));if(trs)trs.push({code:tplText(t.else,get,ctx),tr:t.else_tr||'そうでなければ、下の処理をする',tag:t,depth,els:true});L.push(...renderSec(n.els,ind+'    ',trs,depth+1))}
+   tplLines(t.close,get,ctx).forEach(x=>L.push(ind+x));
+   return;
+  }
+  const cl=tplLines(t.code,get,ctx);
+  cl.forEach(x=>L.push(x?ind+x:''));
+  if(trs)trs.push({code:cl.length?cl.join('\n'):tplText(t.show||'',get,ctx),tr:tr(),tag:t,depth,orig:n.orig,via:n.via,note:n.note});
+  if(n.kids&&n.kids.length)L.push(...renderSec(n.kids,ind+'    ',trs,depth+1));
+ });
+ return L;
+}
+function fileGetter(f,vals,secs){
+ return k=>{let m;
+  if(m=k.match(/^(\w+):(\w+)(?:@([\w-]+))?$/)){const v=flat(secs[m[1]]).filter(n=>n.tag&&(!m[3]||n.tag===m[3])).map(n=>n.o[m[2]]).filter(Boolean).join(', ');if(v||!PH)return v;const ph=flat(secs[m[1]]).find(n=>n.ph);return ph?ph.name:''}
+  return vals[k]==null?'':vals[k]};
+}
+function tidy(L){
+ const out=[];
+ L.forEach(l=>{
+  if(l.trim()===''){if(!out.length||out[out.length-1].trim()===''||/[{\[(]\s*$/.test(out[out.length-1]))return;out.push('');return}
+  if(/^\s*[}\])]/.test(l)&&out.length&&out[out.length-1].trim()==='')out.pop();
+  out.push(l)});
+ while(out.length&&out[out.length-1].trim()==='')out.pop();
+ return out;
+}
+/* 既存のファイルの一部だけを置き換える種類：置き換える所ごとにコードを作る */
+function renderPatches(f,vals,secs,trs){
+ return f.patches.map(pt=>{const own=[];const lines=renderFile({...f,patch:false,uses:[],code:pt.code},vals,secs,own);if(trs)trs.push(...own);
+  return {label:pt.label,find:pt.find,field:pt.field,lines,trs:own}});
+}
+function renderFile(f,vals,secs,trs){
+ if(f.patch)return renderPatches(f,vals,secs,trs).flatMap((p,i)=>i?['',...p.lines]:p.lines);
+ const get=fileGetter(f,vals,secs),ctx={slots:f.fields};
+ const uses=new Set(tplLines(f.uses||[],get,ctx).filter(Boolean));
+ Object.values(secs).forEach(ns=>flat(ns).forEach(n=>{const t=n.tag&&T(n.tag);if(t&&t.uses)tplLines(t.uses,nodeGet(n),{slots:t.slots}).forEach(u=>u&&uses.add(u))}));
+ const L=[];
+ f.code.forEach(x=>{
+  let s;if(typeof x==='string')s=x;else{if(!condOk(x.if,get))return;s=x.t}
+  const m=s.match(/^(\s*)《@(\w+)》\s*$/);
+  if(m){if(m[2]==='uses'){[...uses].sort().forEach(u=>L.push(m[1]+u));return}
+   L.push(...secLines(f,m[2],secs[m[2]],m[1],trs));return}
+  L.push(fill(s,get,ctx));
+ });
+ return tidy(L);
+}
+/* 段（セクション）の札を並べる。group のある段は、囲む値の札をまとめて囲む */
+function secLines(f,key,ns,ind,trs){
+ const sec=f.sections.find(s=>s.key===key),g=sec&&sec.group;
+ if(!g)return renderSec(ns,ind,trs,0);
+ /* 使える人で分ける：誰でも → そのまま／ログインした人 → まとめて囲む */
+ const L=[],gt=T(g.tag);ns=ns||[];
+ const free=ns.filter(n=>!(n.o&&n.o[g.slot]===g.on)),inn=ns.filter(n=>n.o&&n.o[g.slot]===g.on);
+ L.push(...renderSec(free,ind,trs,0));
+ if(inn.length){if(free.length)L.push('');tplLines(gt.open,()=>'',{}).forEach(x=>L.push(ind+x));L.push(...renderSec(inn,ind+'    ',trs,0));tplLines(gt.close,()=>'',{}).forEach(x=>L.push(ind+x))}
+ return L;
+}
+/* ファイル全体で使う use の行（ファイルの uses と、置いた札の uses） */
+function usesOf(f,get,secs){
+ const uses=new Set(tplLines(f&&f.uses||[],get,{slots:f?f.fields:[]}).filter(Boolean));
+ Object.values(secs).forEach(ns=>flat(ns).forEach(n=>{const t=n.tag&&T(n.tag);if(t&&t.uses)tplLines(t.uses,nodeGet(n),{slots:t.slots}).forEach(u=>u&&uses.add(u))}));
+ return [...uses].sort();
+}
+
+/* ===== メモ ⇄ 札の木 ===== */
+const SEP=' / ';
+const ELSE_NAMES=()=>DICT.tags.filter(t=>t.else_name).map(t=>t.else_name);
+const subTags=id=>{const t=T(id);return [...(t.chains||[]),...(t.inner||[])]};
+function secTags(sec){const ids=new Set(sec.tags);const add=id=>subTags(id).forEach(c=>{if(!ids.has(c)){ids.add(c);add(c)}});sec.tags.forEach(add);return [...ids]}
+/* メモの名前から札を探す：上の札がつなげる札・中に入れる札 → 段の札 → 段の中の全部、の順 */
+function findByName(name,pt,sec){return [...(pt?subTags(pt.id):[]),...sec.tags,...secTags(sec),...(ROLE('use')?[ROLE('use')]:[])].find(x=>T(x)&&T(x).name===name)}
+function newNode(id,arr){const t=T(id);const o={};t.slots.forEach((s,i)=>{o[s.key]=arr&&arr[i]!==undefined?arr[i]:(s.default==null?'':s.default)});return {tag:id,o,kids:[]}}
+/* 選ぶ穴の値：「開く」「get」「開く（get）」のどれで書いても、コードの値にそろえる */
+function optNorm(s,v){
+ if(!s||!s.options)return v;
+ const o=s.options.find(o=>{const ov=optV(o),lb=o&&o.label;return v===ov||(lb&&(v===lb||v===`${lb}（${ov}）`))});
+ return o?optV(o):v;
+}
+const INL='　';
+const inlineRe=tg=>new RegExp('^'+tg.slots.map((s,i)=>s.label.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'：'+(i<tg.slots.length-1?'(.*?)':'(.*)')).join(INL)+'$');
+const optShow=(s,v)=>{if(!s||!s.options)return v;const o=s.options.find(o=>optV(o)===v);return o&&o.label?`${o.label}（${v}）`:v};
+function parseSecLines(lines,sec,lang){
+ const ids=secTags(sec);
+ const root={kids:[]},stack=[{n:root,d:-1,key:'kids'}];
+ lines.forEach(raw=>{if(!raw.trim())return;
+  const d=Math.floor(raw.match(/^ */)[0].length/2),t=raw.trim();
+  while(stack.length>1&&stack[stack.length-1].d>=d)stack.pop();
+  const top=stack[stack.length-1];
+  if(t==='そうでなければ'||ELSE_NAMES().includes(t)){const last=top.n[top.key][top.n[top.key].length-1];if(last){last.els=[];stack.push({n:last,d,key:'els'})}return}
+  const i=t.indexOf('：');const name0=(i<0?t:t.slice(0,i)).trim(),rest=i<0?'':t.slice(i+1).replace(/^ /,'');
+  /* 分かれる札の後半（「そうでなければ、もし：条件」） */
+  const lastSib=top.n[top.key][top.n[top.key].length-1],lt=lastSib&&lastSib.tag&&T(lastSib.tag);
+  if(lt&&lt.elif&&name0===(lt.elif_name||'そうでなければ、もし')){const e=newNode(lt.id,[rest]);e.elif=true;(lastSib.elifs=lastSib.elifs||[]).push(e);stack.push({n:e,d,key:'kids'});return}
+  /* 閉じ忘れの行（「閉じ忘れの要素：div / …」） */
+  const unclosed=name0.startsWith(UNCLOSED),name=unclosed?name0.slice(UNCLOSED.length):name0;
+  const pt=top.n.tag&&!top.n.elif?T(top.n.tag):null;
+  /* 項目の行（ルートの「URL：/todos」など）は、上の札の穴に入れる */
+  if(pt&&pt.memo==='items'){const s=pt.slots.find(s=>s.label===name);if(s){top.n.o[s.key]=optNorm(s,rest.trim());return}}
+  /* 1行にラベル付きで並べた札（「カラム：name　値：'仕事'」など） */
+  const inl=[...ids,...(pt&&pt.kv?[pt.kv]:[])].map(T).find(tg=>tg.memo==='inline'&&inlineRe(tg).test(t));
+  if(inl){const m=t.match(inlineRe(inl));const node=newNode(inl.id,m.slice(1).map((v,k)=>optNorm(inl.slots[k],v.trim())));top.n[top.key].push(node);stack.push({n:node,d,key:'kids'});return}
+  const id=findByName(name,pt,sec);
+  let node;
+  if(id){const tg=T(id),sl=tg.slots;
+   if(tg.memo==='items')node=newNode(id,[]);
+   else{let arr=rest===''?[]:rest.split(SEP);if(arr.length>sl.length&&sl.length)arr=[...arr.slice(0,sl.length-1),arr.slice(sl.length-1).join(SEP)];node=newNode(id,arr.map((a,k)=>optNorm(sl[k],a)))}}
+  /* 「カラム：値」の行（Seederの「name：'仕事'」など）は、上の札が決めた札にする */
+  else if(pt&&pt.kv&&i>0)node=newNode(pt.kv,[name,rest]);
+  else node={tag:null,name:t,lang,o:{},kids:[]};
+  if(unclosed&&node.tag)node.unclosed=true;
+  top.n[top.key].push(node);stack.push({n:node,d,key:'kids'});
+ });
+ return root.kids;
+}
+function parseFileMemo(v){
+ const L=v.replace(/\r/g,'').split('\n');
+ const m0=L[0].match(/^\s*【([^】]+)】(.*)$/);if(!m0)return null;
+ const f=DICT.files.find(f=>f.name===m0[1]);if(!f)return null;
+ const vals={};f.fields.forEach(fd=>{vals[fd.key]=fd.default==null?'':fd.default});
+ if(f.head)vals[f.head]=m0[2].trim();
+ const secs={};f.sections.forEach(s=>secs[s.key]=[]);
+ let cur=null,buf=[];const badHeads=[];let bad=null;const present=new Set();
+ const flush=()=>{if(cur)secs[cur.key]=parseSecLines(buf,cur,f.lang);buf=[]};
+ L.slice(1).forEach(l=>{const m=l.match(/^\s*【([^】]+)】(.*)$/);
+  if(m){flush();present.add(m[1]);const sc=f.sections.find(x=>x.label===m[1]);const fd=f.fields.find(x=>x.label===m[1]);cur=sc||null;bad=null;if(!sc&&fd)vals[fd.key]=optNorm(fd,m[2].trim());if(!sc&&!fd){bad={head:m[1],lines:0};badHeads.push(bad)}}
+  else if(cur)buf.push(l);else if(bad&&l.trim())bad.lines++});
+ flush();
+ return {f,vals,secs,badHeads,present};
+}
+function memoLines(nodes,d,pt){
+ return (nodes||[]).flatMap(n=>{
+  const p='  '.repeat(d);
+  if(n.tool)return [];
+  if(!n.tag)return [p+n.name];
+  const t=T(n.tag);
+  if(t.memo==='inline')return [p+t.slots.map(s=>s.label+'：'+(n.o[s.key]==null?'':n.o[s.key])).join(INL)];
+  const elifs=(n.elifs||[]).flatMap(e=>[p+(t.elif_name||'そうでなければ、もし')+'：'+(e.o.cond||''),...memoLines(e.kids,d+1,t)]);
+  const kids=[...memoLines(n.kids,d+1,t),...elifs,...(n.els&&n.els.length?[p+(t.else_name||'そうでなければ'),...memoLines(n.els,d+1,t)]:[])];
+  if(t.memo==='items')return [p+t.name,...t.slots.filter(s=>n.o[s.key]!=null&&n.o[s.key]!=='').map(s=>p+'  '+s.label+'：'+optShow(s,n.o[s.key])),...kids];
+  const v=t.slots.map(s=>n.o[s.key]==null||n.o[s.key]===''?'':optShow(s,n.o[s.key]));while(v.length&&v[v.length-1]==='')v.pop();
+  return [p+(n.unclosed?UNCLOSED:'')+t.name+(v.length?'：'+v.join(SEP):''),...kids]});
+}
+/* 読めた欄と段だけのメモ（行だけの種類で使う） */
+function partMemo(f,r){
+ const L=['【'+f.name+'】'+(f.head?r.vals[f.head]||'':'')];
+ f.fields.filter(fd=>fd.key!==f.head&&r.fieldOrig[fd.key]).forEach(fd=>L.push('【'+fd.label+'】'+(r.vals[fd.key]?optShow(fd,r.vals[fd.key]):'')));
+ f.sections.filter(s=>(r.secs[s.key]||[]).length).forEach(s=>{L.push('【'+s.label+'】',...memoLines(r.secs[s.key],0))});
+ return L.length>1?L.join('\n'):'';
+}
+function fileMemo(f,vals,secs){
+ const L=['【'+f.name+'】'+(f.head?vals[f.head]||'':'')];
+ f.fields.filter(fd=>fd.key!==f.head).forEach(fd=>L.push('【'+fd.label+'】'+(vals[fd.key]?optShow(fd,vals[fd.key]):'')));
+ f.sections.forEach(s=>{L.push('【'+s.label+'】',...memoLines(secs[s.key],0))});
+ return L.join('\n');
+}
+
+/* ===== コード → 札の木（札のひな形を型紙にする） ===== */
+const SET='\u0001';
+/* 穴の既定の形：かっこの数が合っている文字の並び。かっこ ( [ { の中だけは行をまたいでよい。
+   HOLE は、かっこの外では1行の中だけ。HOLE_ML は、ひな形のかっこの中に置いた穴で使い、行をまたいでよい */
+const BR=d=>{const c='[^()\\[\\]{}]',in_=d>0?'|'+BR(d-1):'';return `(?:\\((?:${c}${in_})*\\)|\\[(?:${c}${in_})*\\]|\\{(?:${c}${in_})*\\})`};
+const HOLE=`(?:[^()\\[\\]{}\\n]|${BR(3)})*?`;
+const HOLE_ML=`(?:[^()\\[\\]{}]|${BR(3)})*?`;
+/* PHP の行を左から読み、引用符で囲んだ文字列の中のかっこ（'[' など）を、かっこでない文字に置き換えた写しを作る。
+   長さは変えないので、場所はそのまま元のコードに当てはまる。型紙との照合とかっこの数えはこの写しで行い、穴の値は元のコードから取る */
+const MASK='';
+function maskStr(s,quotes){
+ return s.split('\n').map(line=>{let out='',i=0;
+  while(i<line.length){const ch=line[i];
+   if(quotes.includes(ch)){let j=i+1;while(j<line.length&&line[j]!==ch){if(line[j]==='\\')j++;j++}
+    if(j<line.length){out+=ch+line.slice(i+1,j).replace(/[()\[\]{}]/g,MASK)+ch;i=j+1;continue}}
+   out+=ch;i++}
+  return out}).join('\n');
+}
+const depthOf=(s,d)=>{for(const ch of s){if('([{'.includes(ch))d++;else if(')]}'.includes(ch))d=Math.max(0,d-1)}return d};
+const gk=k=>'g_'+k.replace(/\W/g,'_');
+function escFlex(s){
+ let r='';
+ for(const ch of s){
+  if(/\s/.test(ch)){if(!r.endsWith('\\s*'))r+='\\s*';continue}
+  const e=ch.replace(/[.*+?^${}()|[\]\\\/]/g,'\\$&');
+  if(/[(),\[\]{};=>.]/.test(ch))r+=(r.endsWith('\\s*')?'':'\\s*')+e+'\\s*';else r+=e;
+ }
+ return r;
+}
+function tplRegex(str,fixed,slots){
+ let re='',lit=0,dep=0;const seen=new Set(),keys=[];
+ str.split(/(《[^》]+》)/).forEach(p=>{
+  const m=p.match(/^《([^》|]+)((?:\|[^》|]+)*)》$/);
+  if(m){const k=m[1];
+   if(k in fixed){re+=escFlex(fixed[k]);lit+=fixed[k].length;dep=depthOf(fixed[k],dep);return}
+   if(seen.has(k)){re+=`\\k<${gk(k)}>`;lit+=1;return}
+   seen.add(k);keys.push([k,m[2]]);const sl=(slots||[]).find(x=>x.key===k);re+=`(?<${gk(k)}>${sl&&sl.pattern?sl.pattern:(dep>0?HOLE_ML:HOLE)})`;return}
+  re+=escFlex(p);lit+=p.replace(/\s/g,'').length;dep=depthOf(p,dep)});
+ re=re.replace(/^(\\s\*)+/,'').replace(/(\\s\*)+$/,'');
+ return {re,lit,keys};
+}
+function cart(arrs){return arrs.reduce((acc,a)=>acc.flatMap(x=>a.map(y=>[...x,y])),[[]])}
+function variants(t,key){
+ const tpl=[].concat(t[key]||[]);
+ const condKeys=new Set();
+ tpl.forEach(x=>{if(typeof x==='object')[].concat(x.if||[]).forEach(c=>{const m=c.match(/^!?([^=!~^]+)/);condKeys.add(m[1])})});
+ const keys=[...condKeys];
+ const doms=keys.map(k=>{const sl=(t.slots||[]).find(s=>s.key===k);return sl&&sl.options?sl.options.map(optV):[SET,'']});
+ const out=cart(doms).map(c=>{
+  const asg=Object.fromEntries(keys.map((k,i)=>[k,c[i]]));
+  const g=k=>asg[k]===undefined?'x':(asg[k]===SET?'x':asg[k]);
+  const ls=tpl.filter(x=>typeof x==='string'||condOk(x.if,g)).map(x=>typeof x==='string'?x:x.t);
+  const fixed={},set={};keys.forEach(k=>{if(asg[k]!==SET){set[k]=asg[k];if(asg[k]!=='')fixed[k]=asg[k]}});
+  return {text:ls.join('\n'),fixed,set,via:false}});
+ (key==='code'||key==='open'?(t.reads||[]):[]).forEach(r=>{
+  if(typeof r==='string')out.push({text:r,fixed:{},set:{},via:true});
+  else if(Array.isArray(r))out.push({text:r.join('\n'),fixed:{},set:{},via:true});
+  else out.push({text:[].concat(r.t).join('\n'),fixed:{...(r.set||{})},set:{...(r.set||{})},via:true})});
+ return out.filter(v=>v.text.trim());
+}
+function unf(v,fl){
+ v=v==null?'':v;
+ const fs=String(fl||'').split('|').filter(Boolean);
+ for(const f of fs){const u=(DICT.unfilters||{})[f];if(!u)continue;
+  const q=[...v.matchAll(new RegExp(u.items,'g'))].map(m=>m.slice(1).find(x=>x!==undefined));
+  return (q.length?q:v.split(',').map(s=>s.trim()).filter(Boolean)).join(u.join)}
+ return v.trim();
+}
+/* コメントを、同じ長さの空白に置き換える。言語が決まっていない時（ファイルの見分けの前）は、全部の言語のコメントの形を当てる */
+function stripComments(src,lang){
+ let rules;
+ if(lang)rules=LR(lang).comments||[];
+ else{const seen=new Set();rules=[];LANGS_WITH('comments').forEach(l=>LR(l).comments.forEach(r=>{const k=r.re+'|'+(r.keep||0);if(!seen.has(k)){seen.add(k);rules.push(r)}}))}
+ rules.forEach(r=>{src=src.replace(new RegExp(r.re,'g'),(m,...g)=>{if(r.keep){const a=g[r.keep-1]||'';return a+' '.repeat(m.length-a.length)}return m.replace(/[^\n]/g,' ')})});
+ return src;
+}
+function anchorFor(t){return t.kind==='chain_head'?['^[ \\t]*','']:['^[ \\t]*','[ \\t]*$']}
+/* 穴の値は、照合に使った写しでなく、元のコードの同じ場所から取る */
+const gv=(m,k,orig)=>{const ix=m.indices&&m.indices.groups&&m.indices.groups[gk(k)];return ix?orig.slice(ix[0],ix[1]):m.groups[gk(k)]};
+function matchAll(t,key,src,orig=src){
+ const res=[];const [a,z]=anchorFor(t);
+ variants(t,key).forEach(v=>{
+  const R=tplRegex(v.text,v.fixed,t.slots);let re;try{re=new RegExp(a+R.re+z,'gmd')}catch(e){return}
+  let m;while((m=re.exec(src))){if(!m[0].trim().length){re.lastIndex++;continue}
+   const o={};t.slots.forEach(s=>o[s.key]='');Object.assign(o,v.set);
+   R.keys.forEach(([k,fl])=>{o[k]=unf(gv(m,k,orig),fl)});
+   const lead=m[0].length-m[0].replace(/^[ \t]*/,'').length;
+   /* 穴の中身が行をまたいだか（またいだ物は、1行で当たる物の後に試す） */
+   const ml=R.keys.some(([k])=>/\n/.test(gv(m,k,orig)||''))?1:0;
+   res.push({tag:t.id,t,start:m.index+lead,end:m.index+m[0].length,o,lit:R.lit,via:v.via,ml,kids:[]})}
+ });
+ return res;
+}
+function matchAt(t,src,pos,orig=src,lang){
+ let best=null;
+ variants(t,t.kind==='chain_block'?'open':'code').forEach(v=>{
+  let text=v.text;const ch=LR(lang).chain;if(ch&&new RegExp(ch.after).test(src.slice(0,pos))&&text.startsWith(ch.strip))text=text.slice(ch.strip.length);
+  const R=tplRegex(text,v.fixed,t.slots);const re=new RegExp('\\s*'+R.re,'yd');re.lastIndex=pos;const m=re.exec(src);
+  if(m&&m[0].trim().length&&(!best||R.lit>best.lit)){const o={};t.slots.forEach(s=>o[s.key]='');Object.assign(o,v.set);R.keys.forEach(([k,fl])=>{o[k]=unf(gv(m,k,orig),fl)});best={tag:t.id,start:pos,end:pos+m[0].length,o,lit:R.lit,via:v.via,kids:[]}}
+ });
+ return best;
+}
+/* 閉じる位置を探す：かっこで終わる開きはかっこを数える／それ以外は同じ開きと閉じを数える */
+function closeFind(t,x,src,orig=src,R={}){
+ const sc=R.self_close,PR=R.pair;
+ const get=k=>x.o[k];
+ const op=tplText(t.open,get,{}).trimEnd();
+ const cl=tplText(t.close,get,{}).trim();
+ const el=t.else?tplText(t.else,get,{}).trim():null;
+ const last=op.slice(-1);
+ const pairs={'{':'}','[':']','(':')'};
+ /* 後半（elseif …）の形：決まった書き方と、読むだけの書き方 */
+ const elifTpl=t.elif?[t.elif,...(t.elif_reads||[])]:[];
+ const elifAt=(pos,cut)=>{for(const e of elifTpl){const R=tplRegex(cut?e.trim().slice(1):e.trim(),{},t.slots);const re=new RegExp('\\s*'+R.re,'yd');re.lastIndex=pos;const m=re.exec(src);
+  if(m){const o={};R.keys.forEach(([k,fl])=>o[k]=unf(gv(m,k,orig),fl));return {end:pos+m[0].length,o}}}return null};
+ if(pairs[last]&&x.end>0&&src.slice(0,x.end).trimEnd().endsWith(last)){
+  const o=last,c=pairs[last];
+  const blockEnd=from=>{let d=1,i=from;for(;i<src.length;i++){const ch=src[i];if(ch===o)d++;else if(ch===c){d--;if(d===0)break}}return i<src.length?i:-1};
+  const i=blockEnd(x.end);
+  if(i<0)return null;
+  const r={inner:[x.end,i],elifs:[]};let at=i;
+  for(;;){
+   const e=elifAt(at+1,true);
+   if(e){const j=blockEnd(e.end);if(j<0)break;r.elifs.push({mark:[at,e.end],inner:[e.end,j],o:e.o});at=j;continue}
+   if(el){const em=new RegExp('\\s*'+escFlex(el.slice(1)),'y');em.lastIndex=at+1;const mm=em.exec(src);
+    if(mm){const s2=at+1+mm[0].length,j=blockEnd(s2);if(j>=0){r.elsR=[s2,j];r.elseMark=[at,s2];at=j}}}
+   break;
+  }
+  const rest=new RegExp('\\s*'+escFlex(cl.slice(1)),'y');rest.lastIndex=at+1;const rm=rest.exec(src);
+  r.close=[at,rm?at+1+rm[0].length:at+1];
+  return r;
+ }
+ if(!PR)return null;
+ const pm=op.match(new RegExp(PR.head));if(!pm)return null;
+ const reEsc=s=>s.replace(/[.*+?^${}()|[\]\\\/]/g,'\\$&');
+ const pre=reEsc(pm[0]);
+ const ep=elifTpl.length?(elifTpl[0].trim().match(new RegExp(PR.head))||[''])[0]:'';
+ /* 同じ言語のほかの囲み（閉じの形が決まっている物）も数える。中の囲みの「そうでなければ」を、外の囲みの物と取り違えないため */
+ const txt=x=>[].concat(x||[]).map(c=>typeof c==='string'?c:c.t).join('\n');
+ const others=(DICT.tags||[]).filter(o=>o!==t&&o.lang===t.lang&&(o.kind==='if'||o.kind==='block')&&o.close&&!/《/.test(txt(o.close))&&!/《/.test(txt(o.open).split('\n')[0].replace(/\(.*$/,'')))
+  .map(o=>({h:((txt(o.open).split('\n')[0].trim().match(new RegExp(PR.head))||[''])[0]),c:txt(o.close).trim()})).filter(o=>o.h&&o.h!==pm[0]&&o.c&&o.c!==cl);
+ const oh=new Set(others.map(o=>o.h)),oc=new Set(others.map(o=>o.c));
+ const alt=[...oh].map(h=>reEsc(h)+'(?='+PR.after+')').concat([...oc].map(reEsc));
+ const tok=new RegExp(`${pre}(?=${PR.after})|${reEsc(cl)}${ep?'|'+reEsc(ep)+'(?='+PR.elif_after+')':''}${el?'|'+reEsc(el)+'(?!'+PR.else_not+')':''}${alt.length?'|'+alt.join('|'):''}`,'g');
+ tok.lastIndex=x.end;let d=1,od=0,m;const segs=[{k:'main',a:x.end}];
+ while((m=tok.exec(src))){
+  if(m[0]===cl){d--;if(d===0){segs[segs.length-1].b=m.index;
+   const r={inner:[segs[0].a,segs[0].b],close:[m.index,m.index+m[0].length],elifs:segs.filter(s=>s.k==='elif').map(s=>({mark:s.mark,inner:[s.a,s.b],o:s.o}))};
+   const es=segs.find(s=>s.k==='else');if(es){r.elsR=[es.a,es.b];r.elseMark=es.mark}
+   return r}}
+  else if(ep&&m[0]===ep){if(d===1&&od===0){const e=elifAt(m.index,false);if(e){segs[segs.length-1].b=m.index;segs.push({k:'elif',mark:[m.index,e.end],a:e.end,o:e.o});tok.lastIndex=e.end}}}
+  else if(el&&m[0]===el){if(d===1&&od===0){segs[segs.length-1].b=m.index;segs.push({k:'else',mark:[m.index,m.index+m[0].length],a:m.index+m[0].length})}}
+  else if(oc.has(m[0])){if(od>0)od--}
+  else if(oh.has(m[0])&&m[0]!==pm[0]){od++}
+  else{if(sc){const gt=src.indexOf('>',m.index);if(gt>0&&src.slice(m.index,gt+1).replace(/\s+$/,'').endsWith(sc))continue}d++}
+ }
+ return null;
+}
+/* かっこと引用符の外にある「,」で分ける */
+function splitTop(s){
+ const QALL=[...new Set(LANGS_WITH('strings').flatMap(l=>LR(l).strings))];
+ const out=[];let d=0,q=null,cur='';
+ for(const ch of String(s||'')){
+  if(q){cur+=ch;if(ch===q)q=null;continue}
+  if(QALL.includes(ch)){q=ch;cur+=ch;continue}
+  if('([{'.includes(ch))d++;else if(')]}'.includes(ch))d--;
+  if(ch===','&&d===0){if(cur.trim())out.push(cur.trim());cur='';continue}
+  cur+=ch}
+ if(cur.trim())out.push(cur.trim());
+ return out;
+}
+/* 札の rewrite に従って、古い書き方の札を新しい書き方の札に置き換える */
+function rewriteNodes(ns){
+ return (ns||[]).flatMap(n=>{
+  if(n.kids)n.kids=rewriteNodes(n.kids);
+  const t=n.tag&&T(n.tag);
+  if(!t||!t.rewrite)return [n];
+  const r=t.rewrite,get=nodeGet(n),so={};
+  Object.entries(r.slots||{}).forEach(([k,v])=>so[k]=fill(v,get,{}));
+  return (n.kids||[]).filter(k=>k.tag===r.rows).map(k=>{
+   const nn=newNode(r.to,[]);Object.assign(nn.o,so);nn.via=true;nn.note=r.note;
+   const KV=LR(t.lang).pair_kv;nn.kids=!KV?[]:splitTop(k.o[r.pairs]).map(p=>p.match(new RegExp(KV))).filter(m=>m&&!(r.drop||[]).includes(m[1])).map(m=>newNode(r.kv,[m[1],m[2].trim()]));
+   return nn});
+ });
+}
+/* コードの中から札を探して、入れ子の木にする。ファイル・メソッド・1行のどれでも、これを使う */
+function parseNodes(raw,items,mark,lang){
+ const Q=LR(lang).strings;const src=Q&&Q.length?maskStr(raw,Q):raw;const SC=LR(lang).self_close;
+ const found=[];
+ items.forEach(({id,sec})=>{const t=T(id);if(!t||t.kind==='chain'||t.kind==='chain_block')return;
+  matchAll(t,(t.kind==='block'||t.kind==='if')?'open':'code',src,raw).forEach(x=>{x.sec=sec;found.push(x)})});
+ /* 穴の中身が行をまたいだ物（ml）は、同じ所から始まる囲む札（block・if）が当たる時は使わない（例：Task::create([ … ]) は「保存する（カラムごと）」で読む） */
+ const blockAt=new Set(found.filter(x=>!x.ml&&(x.t.kind==='block'||x.t.kind==='if')).map(x=>x.start));
+ for(let i=found.length-1;i>=0;i--)if(found[i].ml&&blockAt.has(found[i].start))found.splice(i,1);
+ /* 行をまたいだ開きの行（<button … > のように設定が何行も続く物）は、1つのまとまりとして読む。その中に当たった札は使わない */
+ const mlOpen=found.filter(x=>(x.t.kind==='block'||x.t.kind==='if')&&/\n/.test(src.slice(x.start,x.end)));
+ if(mlOpen.length)for(let i=found.length-1;i>=0;i--){const f=found[i];if(mlOpen.some(y=>y!==f&&f.start>y.start&&f.end<=y.end))found.splice(i,1)}
+ found.sort((a,b)=>b.lit-a.lit||a.start-b.start||(b.end-b.start)-(a.end-a.start));
+ const taken=[],acc=[];
+ const free=(a,b)=>!taken.some(([s,e])=>a<e&&s<b);
+ found.forEach(x=>{
+  if(!free(x.start,x.end))return;
+  if(x.t.kind==='block'||x.t.kind==='if'){
+   /* 自分で閉じるタグ（<path … />）は、閉じの要らない物として読む */
+   if(SC&&raw.slice(x.start,x.end).replace(/\s+$/,'').endsWith(SC)){x.selfclose=true;taken.push([x.start,x.end]);acc.push(x);return}
+   const r=closeFind(x.t,x,src,raw,LR(lang));
+   /* 閉じが見つからない開きの行は、閉じ忘れとして残す（辞書にない行にはしない） */
+   if(!r){x.unclosed=true;taken.push([x.start,x.end]);acc.push(x);return}
+   const marks=[r.close,...(r.elseMark?[r.elseMark]:[]),...(r.elifs||[]).map(e=>e.mark)];
+   if(marks.some(mk=>!free(...mk)))return;
+   Object.assign(x,r);taken.push(...marks)}
+  taken.push([x.start,x.end]);acc.push(x)});
+ acc.forEach(x=>{const t=x.t;
+  if(t.kind==='chain_head'){const headEnd=x.end;mark(x.start,headEnd);let pos=x.end,multi=false;
+   for(;;){let best=null;(t.chains||[]).forEach(cid=>{const r=matchAt(T(cid),src,pos,raw,lang);if(r&&(!best||r.lit>best.lit||(r.lit===best.lit&&r.end>best.end)))best=r});
+    if(!best)break;const bt=T(best.tag);best.orig=raw.slice(best.start,best.end).trim();
+    /* どれにも当たらない名前を受ける札（catch_all）：Laravel が最初から持っている名前なら「Laravel の道具（まだ辞書に無い）」にする */
+    if(bt.catch_all&&(DICT[LR(lang).tool_names]||[]).includes(best.o[bt.catch_all])){mark(best.start,best.end);x.kids.push({tag:null,tool:true,name:best.o[bt.catch_all],orig:best.orig,start:best.start,end:best.end,kids:[]});pos=best.end;continue}
+    if(bt.kind==='chain_block'){
+     const CL=LR(lang).closure;if(!CL)break;
+     let d=1,i=best.end;for(;i<src.length;i++){const ch=src[i];if(ch===CL.open)d++;else if(ch===CL.close){d--;if(d===0)break}}
+     if(i>=src.length)break;
+     const cm=new RegExp(CL.end,'y');cm.lastIndex=i;const mm=cm.exec(src);if(!mm)break;
+     const b0=best.end;best.kids=parseNodes(raw.slice(b0,i),(bt.inner||[]).map(id=>({id,sec:x.sec})),(a,b)=>mark(b0+a,b0+b),lang);
+     mark(best.start,best.end);mark(i,i+mm[0].length);best.end=i+mm[0].length;multi=true;
+    }else mark(best.start,best.end);
+    x.kids.push(best);pos=best.end}
+   if(t.absorb)x.kids=x.kids.filter(k=>{const a=k.tag&&t.absorb[k.tag];if(!a)return true;x.o[a.to]=k.o[a.from];if(a.note)x.note=a.note;return false});
+   const sm=/\s*;/y;sm.lastIndex=pos;const mm=sm.exec(src);if(mm)mark(pos,pos+mm[0].length);x.end=mm?pos+mm[0].length:pos;
+   x.orig=multi?raw.slice(x.start,headEnd).trim()+' …;':raw.slice(x.start,x.end).trim();return}
+  x.orig=raw.slice(x.start,x.end).trim();
+  mark(x.start,x.end);if(x.close)mark(...x.close);if(x.elseMark)mark(...x.elseMark);
+  /* 後半（elseif …）を、同じ札の節にして持たせる */
+  if(x.elifs&&x.elifs.length){x._elifR=x.elifs.map(e=>e.inner);x.elifs=x.elifs.map(e=>{mark(...e.mark);const o={};t.slots.forEach(s=>o[s.key]='');Object.assign(o,e.o);return {tag:t.id,o,kids:[],elif:true,orig:raw.slice(...e.mark).trim()}})}
+  else delete x.elifs});
+ acc.sort((a,b)=>a.start-b.start);
+ const holders=acc.filter(x=>x.inner),top=[];
+ acc.forEach(x=>{
+  let best=null,bestSize=Infinity,where=null;
+  const tryR=(b,rg,w)=>{if(rg&&x.start>=rg[0]&&x.end<=rg[1]&&rg[1]-rg[0]<bestSize){best=b;bestSize=rg[1]-rg[0];where=w}};
+  holders.forEach(b=>{if(b===x)return;
+   tryR(b,b.inner,'kids');tryR(b,b.elsR,'els');(b._elifR||[]).forEach((rg,ei)=>tryR(b,rg,ei))});
+  if(best){if(typeof where==='number')best.elifs[where].kids.push(x);else (best[where]=best[where]||[]).push(x)}else top.push(x)});
+ return top;
+}
+/* 読み残しの行を拾う（札にも骨組みにも当たらなかった行） */
+function unknownLines(code,src,cov,skel,lang){
+ const raw=code.replace(/\r/g,'').split('\n');const unknown=[];let off=0;
+ /* 外してよい use は、クラスより前にある物だけ。クラスの中の use（別の部品を借りる行）は辞書にない行に出す */
+ const LRx=LR(lang),im=LRx.imports;const classAt=im&&im.class_start?src.split('\n').findIndex(l=>new RegExp(im.class_start).test(l)):-1;
+ src.split('\n').forEach((l,li)=>{const o=off;off+=l.length+1;const tr=l.trim();if(!tr)return;
+  if((im&&im.skip&&new RegExp(im.skip).test(tr)&&(classAt<0||li<classAt))||(LRx.skip_lines||[]).some(r=>new RegExp(r).test(tr)))return;
+  if(skel.some(r=>r.test(l)))return;
+  let left='';for(let i=0;i<l.length;i++)if(!cov[o+i])left+=l[i];
+  if(left.replace(/[\s{}()\[\];,]/g,'')==='')return;
+  unknown.push(raw[li].trim())});
+ return unknown;
+}
+/* ファイルより小さいもの（メソッド・1行）を読む。札の束はファイルと同じものを使う */
+function forwardSnippet(code,sec,lang){
+ const src=stripComments(code.replace(/\r/g,''),lang);
+ const cov=new Uint8Array(src.length);const mark=(a,b)=>{for(let i=a;i<b;i++)cov[i]=1};
+ const nodes=parseNodes(src,sec.tags.map(id=>({id,sec:sec.key})),mark,lang);
+ return {nodes,unknown:unknownLines(code,src,cov,[],lang),src,lang};
+}
+function forwardFile(f,code){
+ const src=stripComments(code.replace(/\r/g,''),f.lang);
+ const cov=new Uint8Array(src.length);const mark=(a,b)=>{for(let i=a;i<b;i++)cov[i]=1};
+ const vals={},fieldVia={},fieldOrig={};
+ f.fields.forEach(fd=>{vals[fd.key]='';
+  if(fd.reads_all){const got=[];(fd.reads||[]).forEach(r=>{const re=new RegExp(r,'gm');let m;while((m=re.exec(src))){got.push(m.groups.v.trim())}});vals[fd.key]=[...new Set(got)].join(', ');return}
+  const got=(fd.reads||[]).some((r,ri)=>{const m=new RegExp(r,'m').exec(src);if(!m)return false;
+   let v=m.groups.v;if(fd.unfilter)v=unf(v,fd.unfilter);v=v.trim();if(fd.map)v=fd.map[v]!==undefined?fd.map[v]:v;
+   vals[fd.key]=v;fieldVia[fd.key]=ri>0;fieldOrig[fd.key]=src.slice(m.index,src.indexOf('\n',m.index)<0?src.length:src.indexOf('\n',m.index)).trim();mark(m.index,m.index+m[0].length);return true});
+  /* 読めなかった時の値（absent）がある欄は、その値にする */
+  if(fd.reads&&!got&&fd.absent!=null)vals[fd.key]=fd.absent;
+  if(!fd.reads&&fd.default!=null)vals[fd.key]=fd.default});
+ const items=f.sections.flatMap(sec=>sec.tags.map(id=>({id,sec:sec.key})));
+ const secs={};f.sections.forEach(s=>secs[s.key]=[]);
+ parseNodes(src,items,mark,f.lang).forEach(x=>secs[x.sec].push(x));
+ /* 囲みを項目に変える（ルートの「ログインした人だけ」→ 各ルートの「使える人」）／古い書き方を直す（DB::table → Eloquent） */
+ f.sections.forEach(sec=>{
+  let ns=secs[sec.key];
+  if(sec.group){const g=sec.group;
+   ns=ns.flatMap(n=>n.tag===g.tag?(n.kids||[]).map(k=>{if(k.o)k.o[g.slot]=g.on;return k}):[n]);
+   ns.forEach(n=>{const t=n.tag&&T(n.tag);const s=t&&t.slots.find(s=>s.key===g.slot);if(s&&!n.o[g.slot])n.o[g.slot]=s.default})}
+  secs[sec.key]=rewriteNodes(ns);
+ });
+ /* 札に結びつかない use の行は、どんなクラスでも入る「use の行」の札（roles.use）にして、最初の段に残す */
+ const IM=LR(f.lang).imports,useT=IM&&IM.role?ROLE(IM.role):null;
+ if(useT&&T(useT)&&IM.line&&f.sections.length&&(f.code||[]).some(x=>/《@uses》/.test(typeof x==='string'?x:x.t))){
+  const have=new Set(usesOf(f,fileGetter(f,vals,secs),secs).map(u=>u.replace(/\s+/g,' ').trim()));
+  const sl=src.split('\n'),ca=IM.class_start?sl.findIndex(l=>new RegExp(IM.class_start).test(l)):-1;
+  const extra=sl.slice(0,ca<0?sl.length:ca).map(l=>l.match(new RegExp(IM.line))).filter(Boolean).filter(m=>!have.has(fill(IM.show,k=>k==='name'?m[1].replace(/\s+/g,' '):'',{})));
+  const k0=f.sections[0].key;secs[k0]=[...extra.map(m=>newNode(useT,[m[1]])),...secs[k0]];
+ }
+ const skel=[];
+ [...(f.code||[]),...(f.patches||[]).flatMap(p=>p.code),...(f.skel_reads||[])].forEach(x=>{const s=typeof x==='string'?x:x.t;if(/《@/.test(s)||!s.trim())return;try{skel.push(new RegExp('^\\s*'+tplRegex(s.trim(),{}).re+'\\s*$'))}catch(e){}});
+ const unknown=unknownLines(code,src,cov,skel,f.lang);
+ return {vals,secs,unknown,fieldVia,fieldOrig,src};
+}
+/* 部品の意味（1行の中に含まれていたら説明を足す） */
+function partsOf(text,lang,at){
+ const out=[];
+ (DICT.parts||[]).filter(p=>(!p.lang||p.lang===lang)&&(!p.only||p.only===at)).forEach(p=>{
+  const R=tplRegex(p.pattern,{});const re=new RegExp(R.re,'g');let m;
+  while((m=re.exec(text))){if(!m[0].length){re.lastIndex++;continue}const o={};R.keys.forEach(([k,fl])=>o[k]=unf(m.groups[gk(k)],fl));out.push({id:p.id,code:p.show?fill(p.show,k=>o[k],{}):m[0].trim(),meaning:fill(p.meaning,k=>o[k],{})})}});
+ return out;
+}
+function detectFile(v){
+ v=stripComments(String(v).replace(/\r/g,''));
+ let best=null,score=0;
+ DICT.files.forEach(f=>{let s=0;
+  if((f.marks||[]).some(m=>v.includes(m)))s=f.marks.filter(m=>v.includes(m)).length*10+(f.marks_weight||0);
+  if(f.detect&&new RegExp(f.detect,'m').test(v)&&!(f.detect_not&&new RegExp(f.detect_not,'m').test(v)))s=Math.max(s,f.detect_weight||5);
+  if(s>0&&s>score){best=f;score=s}});
+ return best;
+}
+const LANG=l=>(DICT.langs||{})[l]||l;
+function detectFileMemo(v){const m=v.match(/^\s*【([^】]+)】/);if(!m)return null;return DICT.files.find(f=>f.name===m[1])||null}
+
+/* ===== メソッド・1行の大きさで使う決まり（札の束はファイルと同じものを使う） ===== */
+/* 役の札（メソッド・取り出し始め など）と、1行・メソッドを読む時に使うファイルの種類は、辞書の roles（②）に書く */
+const ROLE=k=>(DICT.roles||{})[k];
+/* 1行・メソッドを読む時の技術：②の looks（見分けの目印）が当たる技術。前提で画面の技術を選んでいる時は、それを先に試す */
+const linesSec=t=>t&&t.lines_file&&F(t.lines_file)?F(t.lines_file).sections[0]:null;
+function linesTech(v){
+ const pf=PREMISE.sel!=='auto'&&PREMISE.front?TECHS().find(t=>t.id===PREMISE.front):null;
+ const order=TECHS().filter(t=>t.looks).sort((a,b)=>(b.priority||0)-(a.priority||0));
+ if(pf&&pf.looks){order.splice(order.indexOf(pf),1);order.unshift(pf)}
+ for(const t of order)if(new RegExp(t.looks,'m').test(v))return t;
+ return DEF_TECH();
+}
+function methodTech(v){const t=linesTech(v);return LR(t.lang).method?t:(TECHS().find(x=>x.method_lang)||DEF_TECH())}
+const snippetSec=v=>linesSec(linesTech(v));
+
+/* 戻り値：返す札（returns を持つ札）を、出てくる順に全部「／」でつなぐ（if の中も含む） */
+const RET_SEP=' ／ ';
+const retTags=()=>DICT.tags.filter(t=>t.returns);
+function retsOf(kids){
+ return flat(kids).filter(n=>n.tag&&T(n.tag).returns).map(n=>{const t=T(n.tag),g=nodeGet(n),c={slots:t.slots};return {form:tplText(t.returns.form,g,c),desc:tplText(t.returns.desc||t.returns.form,g,c)}});
+}
+function retOf(kids){const r=retsOf(kids);return {form:r.map(x=>x.form).join(RET_SEP),desc:r.map(x=>x.desc).join(RET_SEP)}}
+/* まとめ：札の sum（まとめの言葉）を、出てくる順に「、」でつなぐ。つなぐ札は後ろの札の言葉を先に置く */
+function sumOf(n){const t=n.tag&&T(n.tag);if(!t)return '';const own=t.sum?tplText(t.sum,nodeGet(n),{slots:t.slots}):'';
+ if(t.kind==='chain_head')return [...new Set((n.kids||[]).map(sumOf).filter(Boolean))].join('')+own;
+ return own}
+const methodSum=n=>[...new Set((n.kids||[]).map(sumOf).filter(Boolean))].join('、');
+
+/* メソッドのメモ */
+function methodMemo(n){
+ return ['【メソッド】'+n.o.name,'引数：'+(n.o.arg||''),'戻り値：'+retOf(n.kids).form,'まとめ：'+methodSum(n),'札：',...memoLines(n.kids,0,T(ROLE('method')))].join('\n');
+}
+/* メソッドの説明：いつ動くか・引数・戻り値・前提の条件・流れ・押さえる点 */
+function methodInfo(n){
+ const all=flat(n.kids),words=(DICT.words.args||{});
+ const fields=all.filter(x=>x.tag===ROLE('request_get')).map(x=>x.o.field);
+ /* 引数は1つずつ言い換える（ぴったり同じ → 形 → *） */
+ const argWord=splitTop(n.o.arg).map(a=>wordFill(wordOf(words,a))||'').filter(Boolean).join('、');
+ const conds=all.filter(x=>x.tag&&T(x.tag).cond_note).map(x=>({text:tplText(T(x.tag).tr,nodeGet(x),{slots:T(x.tag).slots}),id:x.tag}));
+ const seen=new Set(),points=[];
+ all.forEach(x=>{const t=x.tag&&T(x.tag);if(!t||!t.point)return;const p=tplText(t.point,nodeGet(x),{slots:t.slots});if(p&&!seen.has(p)){seen.add(p);points.push({text:p,id:t.id})}});
+ return {
+  when:tplText('《name|words:method》',k=>n.o[k],{}),sum:methodSum(n),
+  args:n.o.arg?n.o.arg+(argWord?'：'+argWord:'')+(fields.length?'。'+fields.join('・')+' が入っている':''):'なし',
+  ret:retOf(n.kids).desc,conds,points,
+  flow:(n.kids||[]).filter(x=>x.tag).map(x=>tplText(T(x.tag).tr,nodeGet(x),{slots:T(x.tag).slots}))};
+}
+/* メソッドを貼った時：コードから札の木を作る。見つかったメソッドは全部、順に出す */
+function forwardMethod(code){
+ const mt=methodTech(code);const r=forwardSnippet(code,linesSec(mt),mt.lang);
+ const methods=r.nodes.filter(n=>n.tag===ROLE('method'));
+ return {...r,node:methods[0],methods};
+}
+/* 戻り値のメモから、返す札を作る（札の中に返す札が無い時だけ）。「／」で区切った物は1つずつ作る */
+function ensureReturn(node,form){
+ if(!form||retsOf(node.kids).length)return;
+ form.split(/\s*／\s*/).filter(Boolean).forEach(one=>{
+  for(const t of retTags()){const pat=t.returns.pattern||{};const R=tplRegex(t.returns.form,{},t.slots.map(s=>({...s,pattern:pat[s.key]||s.pattern})));const m=new RegExp('^'+R.re+'$').exec(one.trim());
+   if(m){const nn=newNode(t.id,[]);R.keys.forEach(([k])=>nn.o[k]=m.groups[gk(k)].trim());node.kids.push(nn);return}}});
+}
+/* 意味の文から、キーワードで札を拾う。つなぐ札は「取り出し始め」の後ろにまとめる */
+function keywordNodes(v){
+ const found=DICT.tags.filter(t=>t.k).map(t=>({t,pos:Math.min(...t.k.map(k=>{const i=v.indexOf(k);return i<0?1e9:i}))})).filter(x=>x.pos<1e9).sort((a,b)=>a.pos-b.pos);
+ const out=[];let chain=null;
+ found.forEach(({t})=>{const n=newNode(t.id,[]);(t.start||[]).forEach(s=>n.kids.push(newNode(s.tag,s.values)));
+  if(t.kind==='chain'){if(!chain){chain=newNode(ROLE('query'),[]);out.push(chain)}chain.kids.push(n)}else{chain=null;out.push(n)}});
+ return out;
+}
+const guessName=nodes=>{const ids=new Set(flat(nodes).map(n=>n.tag));const g=(DICT.name_guess||[]).find(x=>x.tag==='*'||ids.has(x.tag));return g?g.method:'index'};
+const guessArg=nodes=>{const ids=new Set(flat(nodes).map(n=>n.tag));return (DICT.arg_guess||[]).filter(g=>g.tags.some(t=>ids.has(t))).map(g=>g.arg).join(', ')};
+/* メソッドのメモ（【メソッド】の段）を読む。札：が無い時は、まとめの文からキーワードで拾う */
+function parseMethodMemo(v){
+ return v.replace(/\r/g,'').split(/^【メソッド】/m).slice(1).map(b=>{
+  const lines=b.split('\n'),name=lines[0].trim();
+  const get=k=>{const m=b.match(new RegExp('^'+k+'[：:][ \\t]*(.*)$','m'));return m?m[1].trim():''};
+  const ti=lines.findIndex(l=>/^札[：:]/.test(l.trim()));
+  const kids=ti<0?keywordNodes(get('まとめ')):parseSecLines(lines.slice(ti+1).filter(l=>!/^【/.test(l)),linesSec(methodTech('')),methodTech('').lang);
+  const node={tag:ROLE('method'),o:{name:name||guessName(kids),arg:get('引数'),ret:''},kids};
+  ensureReturn(node,get('戻り値'));
+  return node;
+ });
+}
+/* 普通の文（メモの形でない）からメソッドを作る */
+function sentenceMethod(v){
+ const kids=keywordNodes(v);if(!kids.length)return null;
+ return {tag:ROLE('method'),o:{name:guessName(kids),arg:guessArg(kids),ret:''},kids};
+}
+/* 1行（いくつかの行）を貼った時 */
+function forwardLines(code){const t=linesTech(code);return forwardSnippet(code,linesSec(t),t.lang)}
 
-  /* ================= 基本の道具 ================= */
-
-  const toList = v => Array.isArray(v) ? v.filter(x => x !== '' && x != null)
-    : String(v == null ? '' : v).split(/\s*[,、]\s*/).map(s => s.trim()).filter(Boolean);
-  const isEmpty = v => Array.isArray(v) ? v.length === 0 : (v == null || String(v).trim() === '');
-  const norm = s => String(s).replace(/\s+/g, ' ').trim();
-  const squash = s => String(s).replace(/\s+/g, '');
-  const escRe = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const ind = d => '    '.repeat(d);
-  const clone = v => JSON.parse(JSON.stringify(v));
-
-  const FILTERS = {
-    table: v => { v = String(v); return v ? v.charAt(0).toLowerCase() + v.slice(1) + 's' : ''; },
-    lcfirst: v => { v = String(v); return v.charAt(0).toLowerCase() + v.slice(1); },
-    ucfirst: v => { v = String(v); return v.charAt(0).toUpperCase() + v.slice(1); },
-    lower: v => String(v).toLowerCase(),
-    path: v => String(v).replace(/\./g, '/'),
-    quote_list: v => toList(v).map(x => `'${x}'`).join(', '),
-    join_dot: v => toList(v).join('・'),
-    keys: v => toList(v).map(x => x.split(':')[0]).join(', '),
-    concat: v => toList(v).join('')
-  };
-
-  function getVal(ctx, name) {
-    if (ctx == null) return '';
-    if (Object.prototype.hasOwnProperty.call(ctx, name)) return ctx[name];
-    return '';
-  }
-
-  /* 穴を埋める。《@名前》 はブロックなので触らない */
-  function fill(str, ctx) {
-    return String(str).replace(/《([^《》]+)》/g, (m, inner) => {
-      if (inner.charAt(0) === '@') return m;
-      const [name, ...filters] = inner.split('|');
-      let v = getVal(ctx, name);
-      for (const f of filters) if (FILTERS[f]) v = FILTERS[f](v);
-      if (Array.isArray(v)) v = v.join(', ');
-      return v == null ? '' : String(v);
-    });
-  }
-
-  /* 条件：文字1つか並び（並びは全部満たす） */
-  function cond(c, ctx) {
-    if (c == null) return true;
-    if (Array.isArray(c)) return c.every(x => cond(x, ctx));
-    c = String(c);
-    let m;
-    if ((m = c.match(/^([^!=]+)!=(.*)$/))) return String(getVal(ctx, m[1])) !== m[2];
-    if ((m = c.match(/^([^!=]+)=(.*)$/))) return String(getVal(ctx, m[1])) === m[2];
-    if (c.charAt(0) === '!') return isEmpty(getVal(ctx, c.slice(1)));
-    return !isEmpty(getVal(ctx, c));
-  }
-
-  /* 行の並び → 行の配列。blocks は《@名前》の中身 */
-  function lines(tpl, ctx, blocks) {
-    if (tpl == null) return [];
-    const items = Array.isArray(tpl) ? tpl : [tpl];
-    const raw = [];
-    for (const it of items) {
-      if (typeof it === 'string') raw.push(fill(it, ctx));
-      else if (it && it.each) {
-        for (const one of toList(getVal(ctx, it.each))) {
-          const c = Object.assign({}, ctx, { one });
-          if (it.split) {
-            const k = one.indexOf(it.split);
-            c.key = k < 0 ? one : one.slice(0, k);
-            c.value = k < 0 ? '' : one.slice(k + it.split.length);
-          }
-          raw.push(fill(it.t, c));
-        }
-      } else if (it && 'if' in it) { if (cond(it.if, ctx)) raw.push(fill(it.t, ctx)); }
-      else if (it && 't' in it) raw.push(fill(it.t, ctx));
-    }
-    const out = [];
-    for (const r of raw) {
-      for (const l of r.split('\n')) {
-        const m = l.match(/^(\s*)《@([^《》]+)》\s*$/);
-        if (m) {
-          const b = blocks && blocks[m[2]];
-          const bl = b == null ? [] : (Array.isArray(b) ? b : String(b).split('\n'));
-          for (const x of bl) out.push(x === '' ? '' : m[1] + x);
-        } else out.push(l);
-      }
-    }
-    return tidy(out);
-  }
-  /* 空行を2つ続けない・前後の空行を消す */
-  function tidy(arr) {
-    const out = [];
-    for (const l of arr) {
-      const e = l.trim() === '';
-      if (e && (out.length === 0 || out[out.length - 1] === '')) continue;
-      out.push(e ? '' : l);
-    }
-    while (out.length && out[out.length - 1] === '') out.pop();
-    return out;
-  }
-  /* 訳など：並びはすき間なくつないで1文 */
-  function text(tpl, ctx) {
-    if (tpl == null) return '';
-    if (typeof tpl === 'string') return fill(tpl, ctx);
-    return tpl.map(it => {
-      if (typeof it === 'string') return fill(it, ctx);
-      if (it && 'if' in it) return cond(it.if, ctx) ? fill(it.t, ctx) : '';
-      if (it && 't' in it) return fill(it.t, ctx);
-      return '';
-    }).join('');
-  }
-
-  /* ================= 辞書の読み込み ================= */
-
-  const SHELF_FIELDS = {
-    tags: ['id', 'name', 'lang', 'kind', 'slots', 'code', 'open', 'close', 'else', 'empty', 'tr', 'keywords', 'note', 'uses', 'arg', 'ends'],
-    parts: ['id', 'lang', 'pattern', 'meaning', 'note'],
-    method_names: ['id', 'name', 'when', 'guess_from', 'guess_default', 'lang'],
-    returns: ['id', 'form', 'code'],
-    elements: ['id', 'name', 'lang', 'place', 'slots', 'code', 'tr'],
-    pages: ['id', 'kind', 'lang', 'head', 'fields', 'tags_label', 'empty_body', 'code', 'method_page', 'uses', 'uses_from_args', 'outputs', 'elements_label', 'notes'],
-    error_sources: ['name', 'marks'],
-    errors: ['id', 'source', 'mark', 'extract', 'happened', 'stopped', 'causes', 'steps'],
-    headwords: ['word', 'aliases'],
-    questions: ['id', 'text', 'type', 'options', 'default', 'show_if'],
-    file_steps: ['id', 'kind', 'title', 'cmds', 'where', 'lists', 'code'],
-    examples: ['id', 'text', 'words', 'ask', 'rows', 'steps']
-  };
-  const KINDS = ['line', 'chain', 'chain_head', 'inner', 'if', 'loop'];
-
-  /* JSONとして読めなくなった位置（文字の番号）を探す。読めれば -1 */
-  function jsonErrorPos(s) {
-    let i = 0;
-    const ws = () => { while (i < s.length && /[ \t\r\n]/.test(s[i])) i++; };
-    const fail = () => { throw { pos: i }; };
-    function str() {
-      i++;
-      while (i < s.length) {
-        const c = s[i];
-        if (c === '"') { i++; return; }
-        if (c === '\\') { i += 2; continue; }
-        if (c < ' ') fail();
-        i++;
-      }
-      fail();
-    }
-    function val() {
-      ws();
-      const c = s[i];
-      if (c === '{') {
-        i++; ws();
-        if (s[i] === '}') { i++; return; }
-        for (;;) {
-          ws(); if (s[i] !== '"') fail(); str(); ws();
-          if (s[i] !== ':') fail(); i++; val(); ws();
-          if (s[i] === ',') { i++; continue; }
-          if (s[i] === '}') { i++; return; }
-          fail();
-        }
-      }
-      if (c === '[') {
-        i++; ws();
-        if (s[i] === ']') { i++; return; }
-        for (;;) {
-          val(); ws();
-          if (s[i] === ',') { i++; continue; }
-          if (s[i] === ']') { i++; return; }
-          fail();
-        }
-      }
-      if (c === '"') { str(); return; }
-      const m = /^-?(0|[1-9]\d*)(\.\d+)?([eE][+-]?\d+)?/.exec(s.slice(i, i + 64));
-      if (m && m[0]) { i += m[0].length; return; }
-      for (const w of ['true', 'false', 'null']) if (s.startsWith(w, i)) { i += w.length; return; }
-      fail();
-    }
-    try { val(); ws(); if (i < s.length) fail(); return -1; } catch (e) { if (e && typeof e.pos === 'number') return e.pos; throw e; }
-  }
-  function jsonErrorLine(s) {
-    let p = jsonErrorPos(s);
-    if (p < 0) p = s.length;
-    return s.slice(0, p).split('\n').length;
-  }
-
-  function findById(d, id) {
-    for (const shelf of Object.keys(SHELF_FIELDS)) {
-      const arr = d[shelf];
-      if (!Array.isArray(arr)) continue;
-      const it = arr.find(x => x && x.id === id);
-      if (it) return { shelf, item: it };
-    }
-    return null;
-  }
-
-  function applyItem(d, it) {
-    if (!it || typeof it !== 'object') return { reason: '修正の形が型に無い' };
-    if ('add' in it) {
-      const shelf = it.add;
-      if (!SHELF_FIELDS[shelf] || !Array.isArray(d[shelf])) return { reason: `棚の名前「${shelf}」が型に無い` };
-      const v = it.value;
-      if (!v || typeof v !== 'object' || Array.isArray(v)) return { reason: '足す中身（value）が項目の形になっていない' };
-      const bad = Object.keys(v).filter(k => !SHELF_FIELDS[shelf].includes(k) && k !== 'disabled');
-      if (bad.length) return { reason: `欄の名前「${bad.join('・')}」が型に無い` };
-      if (v.id && findById(d, v.id)) return { reason: 'この id はもう辞書にある' };
-      if (shelf === 'tags') {
-        if (d.tags.some(t => t.name === v.name)) return { reason: `札の名前「${v.name}」はもう辞書にある` };
-        if (!KINDS.includes(v.kind)) return { reason: `kind「${v.kind}」が6種類のどれでもない` };
-        if (!Array.isArray(v.slots) || v.tr == null) return { reason: '札に slots か tr が無い' };
-      }
-      d[shelf].push(clone(v));
-      return null;
-    }
-    if ('id' in it) {
-      const f = findById(d, it.id);
-      if (!f) return { reason: '辞書にこの id が無い' };
-      if (!('field' in it)) return { reason: '直す欄（field）が無い' };
-      if (it.field !== 'disabled' && !SHELF_FIELDS[f.shelf].includes(it.field)) return { reason: `欄の名前「${it.field}」が型に無い` };
-      if (it.field === 'id') return { reason: 'id は直せない' };
-      if (f.shelf === 'tags' && it.field === 'kind' && !KINDS.includes(it.value)) return { reason: `kind「${it.value}」が6種類のどれでもない` };
-      f.item[it.field] = clone(it.value);
-      return null;
-    }
-    return { reason: '修正の形が型に無い（id か add が要る）' };
-  }
-
-  /*
-   * 本体の文字と、修正ファイル（番号順・抜けた番号の手前まで）の文字から、辞書を作る
-   * fixFiles: [{ file: 'fix-001.json', text }]
-   */
-  function buildDict(entriesText, fixFiles) {
-    const base = JSON.parse(entriesText);
-    const d = clone(base);
-    const skipped = [];
-    const applied = [];
-    for (const f of fixFiles || []) {
-      let j;
-      try { j = JSON.parse(f.text); } catch (e) {
-        skipped.push({ file: f.file, line: jsonErrorLine(f.text), reason: 'JSONとして読めない' });
-        continue;
-      }
-      if (!j || typeof j !== 'object' || !Array.isArray(j.items)) {
-        skipped.push({ file: f.file, line: 1, reason: 'items の並びが無い（修正ファイルの形が型に無い）' });
-        continue;
-      }
-      if (j.format != null && j.format !== d.format) {
-        skipped.push({ file: f.file, line: 1, reason: `format ${j.format} が本体の format ${d.format} と違う（作り直しが要る）` });
-        continue;
-      }
-      j.items.forEach((it, i) => {
-        const r = applyItem(d, it);
-        if (r) skipped.push({ file: f.file, n: i + 1, id: (it && (it.id || (it.value && it.value.id))) || '（id なし）', reason: r.reason });
-      });
-      applied.push(f.file);
-    }
-    for (const shelf of Object.keys(SHELF_FIELDS)) if (Array.isArray(d[shelf])) d[shelf] = d[shelf].filter(x => !(x && x.disabled));
-    return prepare({ dict: d, skipped, applied });
-  }
-
-  /*
-   * 本体と修正ファイルを読む。getText(path) は文字を返す（無ければ null）
-   * fix-001 から順に読み、番号が無くなったところで止まる
-   */
-  async function loadAll(getText) {
-    const entries = await getText('dict/entries.json');
-    if (entries == null) throw new Error('dict/entries.json が読めません');
-    const files = [];
-    for (let n = 1; n < 1000; n++) {
-      const file = `fix-${String(n).padStart(3, '0')}.json`;
-      const t = await getText('dict/fixes/' + file);
-      if (t == null) break;
-      files.push({ file, text: t });
-    }
-    const res = buildDict(entries, files);
-    res.files = files.map(f => f.file);
-    return res;
-  }
-
-  /* 未登録の一覧に足す（同じものは1回だけ） */
-  function addMissing(list, text, kind) {
-    const t = String(text || '').trim();
-    if (!t || list.some(x => x.text === t)) return false;
-    list.push({ text: t, kind: kind || '' });
-    return true;
-  }
-
-  function prepare(res) {
-    const d = res.dict;
-    d._tagByName = {};
-    for (const t of d.tags || []) d._tagByName[t.name] = t;
-    d._elByName = {};
-    for (const e of d.elements || []) d._elByName[e.name] = e;
-    d._page = k => (d.pages || []).find(p => p.kind === k);
-    res.state = {
-      tags: (d.tags || []).length,
-      errors: (d.errors || []).length,
-      examples: (d.examples || []).length,
-      last: res.applied.length ? res.applied[res.applied.length - 1].replace(/\.json$/, '') : ''
-    };
-    return res;
-  }
-
-  /* 形の決まり（検品用）：id・札の名前が重複しない、kind が6種類、札は slots と tr を持つ */
-  function checkShape(d) {
-    const errs = [];
-    const ids = new Map();
-    for (const shelf of Object.keys(SHELF_FIELDS)) {
-      for (const it of d[shelf] || []) {
-        if (it && it.id) { if (ids.has(it.id)) errs.push(`id 重複：${it.id}`); ids.set(it.id, shelf); }
-      }
-    }
-    const names = new Set();
-    for (const t of d.tags || []) {
-      if (names.has(t.name)) errs.push(`札の名前 重複：${t.name}`);
-      names.add(t.name);
-      if (!KINDS.includes(t.kind)) errs.push(`kind が6種類のどれでもない：${t.id}`);
-      if (!Array.isArray(t.slots) || t.tr == null) errs.push(`slots か tr が無い：${t.id}`);
-    }
-    return errs;
-  }
-
-  /* ================= コードを区切る道具 ================= */
-
-  function stripComments(code) {
-    return String(code).split('\n').filter(l => !/^\s*(\/\/|#(?!\[))/.test(l)).join('\n');
-  }
-
-  /* 文ごとに分ける（; で終わる文・{ } で閉じる文） */
-  function splitStatements(code) {
-    const s = String(code);
-    const out = [];
-    let cur = '', p = 0, b = 0, q = null;
-    for (let i = 0; i < s.length; i++) {
-      const c = s[i];
-      if (q) { cur += c; if (c === '\\') { cur += s[i + 1] || ''; i++; } else if (c === q) q = null; continue; }
-      if (c === "'" || c === '"' || c === '`') q = c;
-      else if (c === '(' || c === '[') p++;
-      else if (c === ')' || c === ']') p--;
-      else if (c === '{') b++;
-      else if (c === '}') b--;
-      cur += c;
-      if (p === 0 && b === 0) {
-        if (c === ';') { if (cur.trim()) out.push(cur.trim()); cur = ''; }
-        else if (c === '}') {
-          const rest = s.slice(i + 1).replace(/^\s+/, '');
-          if (/^(else\b|elseif\b|catch\b|finally\b|;|\)|->)/.test(rest)) continue;
-          if (cur.trim()) out.push(cur.trim());
-          cur = '';
-        }
-      }
-    }
-    if (cur.trim()) out.push(cur.trim());
-    return out;
-  }
-
-  function findOpenBrace(s, from) {
-    let q = null;
-    for (let i = from || 0; i < s.length; i++) {
-      const c = s[i];
-      if (q) { if (c === '\\') i++; else if (c === q) q = null; continue; }
-      if (c === "'" || c === '"' || c === '`') q = c;
-      else if (c === '{') return i;
-    }
-    return -1;
-  }
-  function matchingClose(s, open, oc, cc) {
-    let q = null, d = 0;
-    for (let i = open; i < s.length; i++) {
-      const c = s[i];
-      if (q) { if (c === '\\') i++; else if (c === q) q = null; continue; }
-      if (c === "'" || c === '"' || c === '`') q = c;
-      else if (c === oc) d++;
-      else if (c === cc) { d--; if (d === 0) return i; }
-    }
-    return -1;
-  }
-
-  /* -> でつないだものを部品に分ける（かっこ・中括弧の中は分けない） */
-  function splitChain(s) {
-    const out = [];
-    let cur = '', p = 0, b = 0, q = null;
-    for (let i = 0; i < s.length; i++) {
-      const c = s[i];
-      if (q) { cur += c; if (c === '\\') { cur += s[i + 1] || ''; i++; } else if (c === q) q = null; continue; }
-      if (c === "'" || c === '"' || c === '`') q = c;
-      else if (c === '(' || c === '[') p++;
-      else if (c === ')' || c === ']') p--;
-      else if (c === '{') b++;
-      else if (c === '}') b--;
-      if (p === 0 && b === 0 && c === '-' && s[i + 1] === '>') {
-        if (cur.trim()) out.push(cur.trim());
-        cur = '->'; i++;
-        continue;
-      }
-      cur += c;
-    }
-    if (cur.trim()) out.push(cur.trim());
-    return out;
-  }
-
-  /* ================= ひな形 → 照合の型 ================= */
-
-  const litRe = s => escRe(s).replace(/\s+/g, '\\s*');
-  function tplRegex(t, fixed, opts) {
-    opts = opts || {};
-    let src = opts.noStart ? '' : '^\\s*';
-    const names = [];
-    let last = 0;
-    String(t).replace(/《([^《》]+)》/g, (m, inner, off) => {
-      src += litRe(t.slice(last, off));
-      const [name, ...filters] = inner.split('|');
-      if (fixed && Object.prototype.hasOwnProperty.call(fixed, name)) src += litRe(fill(m, fixed));
-      else { src += '([\\s\\S]*?)'; names.push({ name, filters }); }
-      last = off + m.length;
-      return m;
-    });
-    src += litRe(t.slice(last));
-    if (opts.tail) src += '([\\s\\S]*?)';
-    if (!opts.noEnd) src += '\\s*$';
-    return { re: new RegExp(src), names };
-  }
-  const literalCount = t => squash(String(t).replace(/《[^《》]*》/g, '')).length;
-
-  function unfilter(v, filters) {
-    v = String(v).trim();
-    if (filters.includes('quote_list')) {
-      const items = [];
-      v.replace(/'([^']*)'|"([^"]*)"/g, (m, a, b) => { items.push(a != null ? a : b); return m; });
-      return items.length ? items.join(', ') : v;
-    }
-    return v;
-  }
-  function matchTpl(t, s, fixed, opts) {
-    const { re, names } = tplRegex(t, fixed, opts);
-    const m = re.exec(s);
-    if (!m) return null;
-    const o = {};
-    names.forEach((n, i) => { if (!(n.name in o)) o[n.name] = unfilter(m[i + 1], n.filters); });
-    if (opts && opts.tail) o.__tail = m[names.length + 1];
-    return o;
-  }
-
-  /* 条件から、照合できた時に穴へ戻す値 */
-  function condSet(c) {
-    const o = {};
-    for (const x of (Array.isArray(c) ? c : [c])) {
-      let m;
-      if (x == null) continue;
-      if ((m = String(x).match(/^([^!=]+)!=(.*)$/))) continue;
-      if ((m = String(x).match(/^([^!=]+)=(.*)$/))) o[m[1]] = m[2];
-      else if (String(x).charAt(0) === '!') o[String(x).slice(1)] = '';
-    }
-    return o;
-  }
-  /* 書き分けの一覧（固定の文字が多い順）。each を含むものは照合できない */
-  function variants(tpl) {
-    if (tpl == null) return [];
-    if (typeof tpl === 'string') return [{ t: tpl, set: {}, lit: literalCount(tpl) }];
-    if (tpl.some(x => x && typeof x === 'object' && x.each)) return [];
-    const conds = tpl.filter(x => x && typeof x === 'object');
-    let vs;
-    if (!conds.length) vs = [{ t: tpl.join('\n'), set: {} }];
-    else if (conds.length === tpl.length) vs = tpl.map(x => ({ t: x.t, set: condSet(x.if) }));
-    else vs = conds.map(c => ({ t: tpl.map(x => typeof x === 'string' ? x : (x === c ? x.t : null)).filter(x => x != null).join('\n'), set: condSet(c.if) }));
-    vs.forEach(v => { v.lit = literalCount(v.t); });
-    return vs.sort((a, b) => b.lit - a.lit);
-  }
-
-  const defaults = tag => Object.fromEntries((tag.slots || []).map(s => [s.key, s.default == null ? '' : s.default]));
-  const makeNode = (tag, o) => ({ tag: tag.name, o: Object.assign(defaults(tag), o || {}), kids: [] });
-
-  /* ================= 正向き：コード → 札の木 ================= */
-
-  function lineCandidates(d) {
-    if (d._lineCands) return d._lineCands;
-    const c = [];
-    for (const tag of d.tags) {
-      if (tag.kind === 'line') for (const v of variants(tag.code)) c.push({ tag, v });
-      if (tag.kind === 'chain_head') for (const v of variants(tag.empty)) c.push({ tag, v, empty: true });
-    }
-    c.sort((a, b) => b.v.lit - a.v.lit);
-    return (d._lineCands = c);
-  }
-  function chainCandidates(d) {
-    if (d._chainCands) return d._chainCands;
-    const c = [];
-    for (const tag of d.tags) if (tag.kind === 'chain') for (const v of variants(tag.code)) c.push({ tag, v });
-    c.sort((a, b) => b.v.lit - a.v.lit);
-    return (d._chainCands = c);
-  }
-  function openCandidates(d, kinds) {
-    const c = [];
-    for (const tag of d.tags) if (kinds.includes(tag.kind)) for (const v of variants(tag.open)) c.push({ tag, v });
-    return c.sort((a, b) => b.v.lit - a.v.lit);
-  }
-
-  function parseStmts(code, ctx, d) {
-    return splitStatements(stripComments(code)).flatMap(s => parseStmt(s, ctx, d));
-  }
-
-  function parseStmt(s, ctx, d) {
-    s = s.trim();
-    if (ctx === 'q' && /^\$q\s*->/.test(s)) {
-      const seg = s.replace(/^\$q\s*/, '').replace(/;\s*$/, '');
-      const nodes = splitChain(seg).map(g => parseSeg(g, d));
-      if (nodes.every(Boolean)) return nodes;
-      return [{ unknown: true, raw: s }];
-    }
-    for (const c of lineCandidates(d)) {
-      const o = matchTpl(c.v.t, s);
-      if (o) return [makeNode(c.tag, Object.assign({}, c.v.set, o))];
-    }
-    const blk = parseBlock(s, d);
-    if (blk) return [blk];
-    for (const c of openCandidates(d, ['chain_head'])) {
-      const o = matchTpl(c.v.t, s, null, { tail: true });
-      if (!o) continue;
-      let rest = o.__tail.trim();
-      delete o.__tail;
-      if (!/;$/.test(rest)) continue;
-      rest = rest.replace(/;$/, '').trim();
-      if (!rest) continue;
-      const kids = splitChain('->' + rest).map(g => parseSeg(g, d));
-      if (!kids.every(Boolean)) continue;
-      const n = makeNode(c.tag, Object.assign({}, c.v.set, o));
-      n.kids = kids;
-      return [n];
-    }
-    return [{ unknown: true, raw: s }];
-  }
-
-  function parseBlock(s, d) {
-    const ob = findOpenBrace(s);
-    if (ob < 0) return null;
-    const header = s.slice(0, ob + 1);
-    const cb = matchingClose(s, ob, '{', '}');
-    if (cb < 0) return null;
-    const body = s.slice(ob + 1, cb);
-    const tail = s.slice(cb);
-    for (const c of openCandidates(d, ['if', 'loop'])) {
-      const o = matchTpl(c.v.t, header);
-      if (!o) continue;
-      const tag = c.tag;
-      let els = null, t2 = tail;
-      if (tag.else) {
-        const er = tplRegex(tag.else, null, { noEnd: true });
-        const em = er.re.exec(tail);
-        if (em && em.index === 0 && /\{\s*$/.test(em[0])) {
-          const ob2 = em[0].lastIndexOf('{');
-          const cb2 = matchingClose(tail, ob2, '{', '}');
-          if (cb2 < 0) continue;
-          els = parseStmts(tail.slice(ob2 + 1, cb2), 'stmt', d);
-          t2 = tail.slice(cb2);
-        }
-      }
-      if (!matchTpl(tag.close, t2.replace(/;\s*$/, ''))) continue;
-      const n = makeNode(tag, Object.assign({}, c.v.set, o));
-      n.kids = parseStmts(body, 'stmt', d);
-      if (els) n.els = els;
-      return n;
-    }
-    return null;
-  }
-
-  function parseSeg(g, d) {
-    g = g.trim();
-    for (const c of chainCandidates(d)) {
-      const o = matchTpl(c.v.t, g);
-      if (o) return makeNode(c.tag, Object.assign({}, c.v.set, o));
-    }
-    const ob = findOpenBrace(g);
-    if (ob < 0) return null;
-    const cb = matchingClose(g, ob, '{', '}');
-    if (cb < 0) return null;
-    const header = g.slice(0, ob + 1), body = g.slice(ob + 1, cb), tail = g.slice(cb);
-    for (const c of openCandidates(d, ['inner'])) {
-      const o = matchTpl(c.v.t, header);
-      if (!o) continue;
-      if (!matchTpl(c.tag.close, tail)) continue;
-      const n = makeNode(c.tag, Object.assign({}, c.v.set, o));
-      n.kids = parseStmts(body, 'q', d);
-      return n;
-    }
-    return null;
-  }
-
-  /* ================= 逆向き：札の木 → コード ================= */
-
-  const tagOf = (d, n) => n && !n.unknown ? d._tagByName[n.tag] : null;
-  const trOf = (d, n) => { const t = tagOf(d, n); return t ? text(t.tr, n.o) : ''; };
-
-  function renderNodes(nodes, ctx, dep, d, trs) {
-    const L = [];
-    for (const n of nodes || []) {
-      if (n.unknown) {
-        const rl = String(n.raw).split('\n').map(x => x.trim());
-        rl.forEach((x, i) => L.push(ind(dep + (i && i < rl.length - 1 ? 1 : 0)) + x));
-        if (trs) trs.push({ code: norm(n.raw), tr: null, tag: null, id: null, unknown: true });
-        continue;
-      }
-      const tag = tagOf(d, n);
-      if (!tag) {
-        L.push(ind(dep) + `// ${n.tag}（辞書にない札）`);
-        if (trs) trs.push({ code: `// ${n.tag}（辞書にない札）`, tr: null, tag: n.tag, id: null, unknown: true });
-        continue;
-      }
-      const o = n.o, first = L.length, slot = trs ? trs.length : 0;
-      if (trs) trs.push(null);
-      const q = arr => {
-        if (ctx === 'q' && arr.length) { arr[0] = '$q' + arr[0]; arr[arr.length - 1] += ';'; }
-        return arr;
-      };
-      if (tag.kind === 'chain_head') {
-        if (!n.kids || !n.kids.length) lines(tag.empty, o).forEach(x => L.push(ind(dep) + x));
-        else {
-          const ch = n.kids.map(k => renderNodes([k], 'chain', dep + 1, d, trs));
-          const head = text(tag.open, o) + ch[0][0].trim().replace(/^->/, '');
-          L.push(ind(dep) + head, ...ch[0].slice(1));
-          ch.slice(1).forEach(c => L.push(...c));
-          L[L.length - 1] += ';';
-        }
-      } else if (tag.kind === 'inner') {
-        const op = (ctx === 'q' ? '$q' : '') + (lines(tag.open, o)[0] || '');
-        const cl = lines(tag.close, o)[0] || '';
-        L.push(ind(dep) + op,...renderNodes(n.kids, 'q', dep + 1, d, trs), ind(dep) + (ctx === 'q' ? cl + ';' : cl));
-      } else if (tag.kind === 'if' || tag.kind === 'loop') {
-        L.push(ind(dep) + (lines(tag.open, o)[0] || ''), ...renderNodes(n.kids, 'stmt', dep + 1, d, trs));
-        if (n.els && n.els.length && tag.else) L.push(ind(dep) + lines(tag.else, o)[0], ...renderNodes(n.els, 'stmt', dep + 1, d, trs));
-        L.push(ind(dep) + (lines(tag.close, o)[0] || ''));
-      } else {
-        const cl = lines(tag.code, o);
-        if (tag.kind === 'chain') q(cl);
-        cl.forEach(x => L.push(ind(dep) + x));
-      }
-      if (trs) trs[slot] = { code: (L[first] || '').trim(), tr: text(tag.tr, o), tag: tag.name, id: tag.id };
-    }
-    return L;
-  }
-
-  /* ================= メモ ================= */
-
-  function memoTagLines(nodes, dep, d) {
-    const out = [];
-    for (const n of nodes || []) {
-      if (n.unknown) continue;
-      const tag = tagOf(d, n);
-      const v = tag ? (tag.slots || []).map(s => n.o[s.key] == null ? '' : String(n.o[s.key])) : [];
-      while (v.length && v[v.length - 1] === '') v.pop();
-      out.push('  '.repeat(dep) + n.tag + '：' + v.join(' / '));
-      out.push(...memoTagLines(n.kids, dep + 1, d));
-      if (n.els) { out.push('  '.repeat(dep) + 'そうでなければ'); out.push(...memoTagLines(n.els, dep + 1, d)); }
-    }
-    return out;
-  }
-
-  function parseTagLines(lns, d) {
-    const root = { kids: [] };
-    const stack = [{ n: root, dep: -1, key: 'kids' }];
-    for (const raw of lns) {
-      if (!raw.trim()) continue;
-      const dep = Math.floor(raw.match(/^ */)[0].length / 2);
-      const t = raw.trim();
-      while (stack.length > 1 && stack[stack.length - 1].dep >= dep) stack.pop();
-      const top = stack[stack.length - 1];
-      if (t === 'そうでなければ') {
-        const arr = top.n[top.key];
-        const last = arr[arr.length - 1];
-        if (last) { last.els = []; stack.push({ n: last, dep, key: 'els' }); }
-        continue;
-      }
-      const m = t.match(/^([^：:]+)[：:]?\s*(.*)$/);
-      const name = m[1].trim();
-      const arr = m[2] === '' ? [] : m[2].split(' / ').map(x => x.trim());
-      const tag = d._tagByName[name];
-      const node = { tag: name, o: tag ? defaults(tag) : {}, kids: [] };
-      if (tag) (tag.slots || []).forEach((s, i) => { if (arr[i] !== undefined) node.o[s.key] = arr[i]; });
-      top.n[top.key].push(node);
-      stack.push({ n: node, dep, key: 'kids' });
-    }
-    return root.kids;
-  }
-
-  /* まとめの文（自由文）→ キーワードで札を拾う。続いた chain は取り出し始めの下に */
-  function keywordNodes(v, d) {
-    const found = d.tags.map((t, i) => ({ t, i, pos: Math.min(...(t.keywords || []).map(k => { const p = v.indexOf(k); return p < 0 ? Infinity : p; }), Infinity) }))
-      .filter(x => x.pos < Infinity).sort((a, b) => a.pos - b.pos || a.i - b.i).map(x => x.t);
-    const head = d.tags.find(t => t.kind === 'chain_head');
-    const out = [];
-    let chain = null;
-    for (const t of found) {
-      if (t.kind === 'chain' && head) {
-        if (!chain) { chain = makeNode(head); out.push(chain); }
-        chain.kids.push(makeNode(t));
-      } else { chain = null; out.push(makeNode(t)); }
-    }
-    return out;
-  }
-
-  function flat(nodes) {
-    return (nodes || []).flatMap(n => [n, ...flat(n.kids), ...flat(n.els)]);
-  }
-  function flatPaths(nodes, p) {
-    p = p || '';
-    return (nodes || []).flatMap((n, i) => [{ n, path: p + i, depth: (p.match(/[-e]/g) || []).length, inElse: /e/.test(p) }, ...flatPaths(n.kids, p + i + '-'), ...flatPaths(n.els, p + i + 'e')]);
-  }
-
-  /* ================= メソッド ================= */
-
-  function methodWhen(d, name) {
-    const mn = d.method_names || [];
-    let hit = mn.find(m => m.name === name);
-    if (!hit) hit = mn.find(m => m.name.length > 1 && m.name.endsWith('*') && name.startsWith(m.name.slice(0, -1)));
-    if (!hit) hit = mn.find(m => m.name === '*');
-    return hit ? { text: fill(hit.when, { name }), id: hit.id } : { text: `${name}が呼ばれた時`, id: null };
-  }
-  function guessName(d, nodes) {
-    const used = new Set(flat(nodes).map(n => n.tag));
-    const mn = d.method_names || [];
-    for (const m of mn) if ((m.guess_from || []).some(t => used.has(t))) return m.name;
-    const def = mn.find(m => m.guess_default);
-    return def ? def.name : 'index';
-  }
-  function guessArg(d, nodes) {
-    const a = [];
-    for (const n of flat(nodes)) { const t = tagOf(d, n); if (t && t.arg && !a.includes(t.arg)) a.push(t.arg); }
-    return a.join(', ');
-  }
-
-  /* return の1行 → 戻り値の書き方 */
-  function returnForm(d, line) {
-    const L = norm(line);
-    for (const r of d.returns || []) {
-      const m = /《([^《》|]+)[^《》]*》/.exec(r.code);
-      if (!m) { if (squash(L) === squash(r.code)) return { form: fill(r.form, {}), id: r.id }; continue; }
-      const pre = squash(r.code.slice(0, m.index));
-      const after = r.code.slice(m.index + m[0].length);
-      const delim = after.charAt(0);
-      const S = squash(L);
-      if (!S.startsWith(pre)) continue;
-      const rest = S.slice(pre.length);
-      const end = delim ? rest.indexOf(delim) : rest.length;
-      if (end <= 0) continue;
-      return { form: fill(r.form, { [m[1]]: rest.slice(0, end) }), id: r.id };
-    }
-    return null;
-  }
-  /* 戻り値の書き方 → return の1行 */
-  function returnLine(d, ret) {
-    if (!ret) return '';
-    for (const r of d.returns || []) {
-      const o = matchTpl(r.form, ret);
-      if (o) return fill(r.code, o);
-    }
-    return '';
-  }
-
-  function hasEnds(d, nodes) { return flat(nodes).some(n => { const t = tagOf(d, n); return t && t.ends; }); }
-
-  function methodLines(d, m, trs) {
-    const page = d._page('method');
-    const body = renderNodes(m.nodes, 'stmt', 0, d, trs);
-    if (!hasEnds(d, m.nodes)) { const r = returnLine(d, m.ret); if (r) body.push(r); }
-    if (!body.length && page.empty_body) body.push(page.empty_body);
-    return lines(page.code, { [page.head.key]: m.name, arg: m.arg, ret: m.ret, sum: m.sum }, { body });
-  }
-
-  /* コード1つ分の関数を読む */
-  function parseMethodAt(code, start, d) {
-    const s = code.slice(start);
-    let m = /function\s+(\w+)\s*\(/.exec(s);
-    let name, argOpen;
-    if (m) { name = m[1]; argOpen = m.index + m[0].length - 1; }
-    else if ((m = /(?:const|let|var)\s+(\w+)\s*=\s*(?:async\s*)?\(/.exec(s))) { name = m[1]; argOpen = m.index + m[0].length - 1; }
-    else return null;
-    const argClose = matchingClose(s, argOpen, '(', ')');
-    if (argClose < 0) return null;
-    const arg = norm(s.slice(argOpen + 1, argClose));
-    const ob = findOpenBrace(s, argClose);
-    if (ob < 0) return null;
-    const cb = matchingClose(s, ob, '{', '}');
-    if (cb < 0) return null;
-    const body = s.slice(ob + 1, cb);
-    return { name, arg, body, end: start + cb + 1, nodes: parseStmts(body, 'stmt', d) };
-  }
-
-  /* 流れ・まとめ・前提の条件 */
-  function describe(d, n) {
-    if (n.unknown) return `（辞書にない処理：${norm(n.raw)}）`;
-    const t = tagOf(d, n);
-    if (!t) return `（辞書にない札：${n.tag}）`;
-    const first = t.slots && t.slots[0] ? n.o[t.slots[0].key] : '';
-    const kids = (n.kids || []).map(k => describe(d, k)).join('、');
-    if (t.kind === 'if') {
-      let s = `もし ${first} なら、${kids}`;
-      if (n.els && n.els.length) s += `。そうでなければ、${n.els.map(k => describe(d, k)).join('、')}`;
-      return s;
-    }
-    if (t.kind === 'loop') return `${first} を1件ずつ取り出して、${kids}`;
-    if (t.kind === 'inner' || t.kind === 'chain_head') return kids ? `${trOf(d, n)}（${kids}）` : trOf(d, n);
-    return trOf(d, n);
-  }
-  function mergedTr(d, group) {
-    const t = tagOf(d, group[0]);
-    const o = {};
-    for (const s of t.slots || []) {
-      const vals = [];
-      group.forEach(n => { const v = n.o[s.key]; if (!vals.includes(v)) vals.push(v); });
-      o[s.key] = vals.join(' と ');
-    }
-    return text(t.tr, o);
-  }
-  function flowSteps(d, nodes) {
-    const steps = [];
-    let i = 0;
-    while (i < nodes.length) {
-      const n = nodes[i];
-      let j = i + 1;
-      if (!n.unknown) while (j < nodes.length && !nodes[j].unknown && nodes[j].tag === n.tag) j++;
-      const group = nodes.slice(i, j);
-      const t = tagOf(d, n);
-      if (group.length >= 2 && t) {
-        if (t.kind === 'chain' || t.kind === 'inner') steps.push(`「${t.name}」を${group.length}個重ねる：${group.map(g => describe(d, g)).join('、')}`);
-        else if (group.every(g => !(g.kids && g.kids.length) && !g.els)) steps.push(mergedTr(d, group));
-        else group.forEach(g => steps.push(describe(d, g)));
-      } else if (t && t.kind === 'chain_head' && n.kids && n.kids.length) {
-        steps.push(trOf(d, n));
-        steps.push(...flowSteps(d, n.kids));
-      } else steps.push(describe(d, n));
-      i = j;
-    }
-    return steps;
-  }
-  function joinFlow(steps) {
-    if (!steps.length) return '';
-    if (steps.length === 1) return steps[0] + '。';
-    if (steps.length === 2) return `まず、${steps[0]}。最後に、${steps[1]}。`;
-    return steps.map((s, i) => (i === 0 ? 'まず、' : i === steps.length - 1 ? '最後に、' : '次に、') + s + '。').join('');
-  }
-  function summaryTags(nodes) {
-    const names = [];
-    for (const n of nodes) if (!n.unknown && !names.includes(n.tag)) names.push(n.tag);
-    return names.slice(0, 3).join('、');
-  }
-
-  function methodForward(code, d) {
-    const m = parseMethodAt(code, 0, d);
-    if (!m) return null;
-    return methodInfo(d, m);
-  }
-  function methodInfo(d, m) {
-    const when = methodWhen(d, m.name);
-    const all = flat(m.nodes);
-    let ret = null;
-    for (const n of all) {
-      const t = tagOf(d, n);
-      if (t && t.ends) { ret = returnForm(d, renderNodes([n], 'stmt', 0, d)[0] || ''); if (ret) break; }
-    }
-    if (!ret) for (const n of all) if (n.unknown && /^return\b/.test(n.raw)) { ret = returnForm(d, n.raw); if (ret) break; }
-    const sum = summaryTags(m.nodes);
-    const conds = all.filter(n => { const t = tagOf(d, n); return t && (t.slots || []).some(s => s.key === 'cond'); })
-      .map(n => ({ text: describe(d, n), id: tagOf(d, n).id }));
-    const notes = [];
-    for (const n of all) { const t = tagOf(d, n); if (t && t.note && !notes.some(x => x.id === t.id)) notes.push({ text: t.note, id: t.id }); }
-    const trs = [];
-    renderNodes(m.nodes, 'stmt', 0, d, trs);
-    const page = d._page('method');
-    const memo = [`【${page.head.label}】${m.name}`];
-    const fv = { arg: m.arg, ret: ret ? ret.form : '', sum };
-    for (const f of page.fields) memo.push(`${f.label}：${fv[f.key] == null ? '' : fv[f.key]}`);
-    memo.push(`${page.tags_label}：`, ...memoTagLines(m.nodes, 0, d));
-    return {
-      name: m.name, arg: m.arg, when, sum, ret, conds, notes, trs,
-      flow: joinFlow(flowSteps(d, m.nodes)),
-      memo: memo.join('\n'),
-      nodes: m.nodes,
-      unknown: all.filter(n => n.unknown).map(n => norm(n.raw))
-    };
-  }
-
-  /* ================= メモを読む ================= */
-
-  function memoField(text, label) {
-    const m = new RegExp('【' + escRe(label) + '】[ \\t]*([^\\n]*)').exec(text);
-    return m ? m[1].trim() : null;
-  }
-  function parseMethodMemos(v, d) {
-    const page = d._page('method');
-    const re = new RegExp('^\\s*【' + escRe(page.head.label) + '】', 'm');
-    const parts = v.split(new RegExp('^\\s*(?=【' + escRe(page.head.label) + '】)', 'm')).filter(b => re.test(b));
-    return parts.map(b => {
-      b = b.replace(re, '');
-      const ls = b.split('\n');
-      const out = { name: ls[0].trim() || page.head.default || 'index' };
-      for (const f of page.fields) {
-        const m = new RegExp('^\\s*' + escRe(f.label) + '[：:][ \\t]*(.*)$', 'm').exec(b);
-        out[f.key] = m ? m[1].trim() : (f.default || '');
-      }
-      const ti = ls.findIndex(l => new RegExp('^\\s*' + escRe(page.tags_label) + '[：:]\\s*$').test(l));
-      if (ti < 0) {
-        out.nodes = keywordNodes(out.sum || '', d);
-        out.fromSummary = true;
-      } else {
-        const tl = [];
-        for (const l of ls.slice(ti + 1)) { if (/^\s*【/.test(l)) break; tl.push(l); }
-        out.nodes = parseTagLines(tl, d);
-      }
-      return out;
-    });
-  }
-
-  /* ================= ページ（バックエンド） ================= */
-
-  function backForward(code, d) {
-    const page = d._page('back');
-    const mpage = d._page('method');
-    const cm = /class\s+(\w+)/.exec(code);
-    const controller = cm ? cm[1] : '';
-    const models = [];
-    code.replace(/use\s+App\\Models\\(\w+)\s*;/g, (m, x) => { models.push(x); return m; });
-    const auth = /Auth::|auth\(\)/.test(code) ? 'いる' : 'いらない';
-    const methods = [];
-    const re = /function\s+\w+\s*\(/g;
-    let mm, from = 0;
-    while ((mm = re.exec(code))) {
-      if (mm.index < from) continue;
-      const m = parseMethodAt(code, mm.index, d);
-      if (!m) break;
-      methods.push(methodInfo(d, m));
-      from = m.end;
-      re.lastIndex = m.end;
-    }
-    const role = `${controller.replace(/Controller$/, '')}の${methods.map(m => m.name).join('・')}をする係`;
-    const vals = { controller, models: models.join(', '), auth, route: '' };
-    const memo = [`【${page.head.label}】${role}`];
-    for (const f of page.fields) memo.push(`【${f.label}】${vals[f.key] == null ? '' : vals[f.key]}`);
-    const L = [...memo];
-    for (const m of methods) L.push(m.memo);
-    const read = [
-      { text: `【${page.head.label}】${role}：class の名前 ${controller} と、メソッドの名前 ${methods.map(m => m.name).join('・')} から` },
-      { text: `【${field(page, 'controller')}】class の名前から` },
-      { text: `【${field(page, 'models')}】${models.length ? 'use App\\Models\\ の行から' : 'use App\\Models\\ の行が無いので空欄'}` },
-      { text: `【${field(page, 'auth')}】${auth}：${auth === 'いる' ? 'Auth:: か auth() を使っているため' : 'Auth:: も auth() も使っていないため'}` },
-      { text: `【${field(page, 'route')}】このファイルだけでは分からないので空欄。routes/web.php の1行を見て埋める` }
-    ];
-    const trs = methods.flatMap(m => m.trs);
-    const unknown = methods.flatMap(m => m.unknown);
-    return { memo: L.join('\n'), read, trs, unknown, methods, id: page.id, mpageId: mpage.id };
-  }
-  function field(page, key) { const f = page.fields.find(x => x.key === key); return f ? f.label : key; }
-
-  function splitVals(f, v) {
-    const o = {};
-    if (f.split) {
-      const p = String(v || '').trim().split(/\s+/);
-      f.split.forEach((k, i) => { o[`${f.key}.${k}`] = i < f.split.length - 1 ? (p[i] || '') : p.slice(i).join(' '); });
-    }
-    return o;
-  }
-  function pageCtx(page, vals) {
-    const ctx = {};
-    for (const f of page.fields) { ctx[f.key] = vals[f.key] == null ? '' : vals[f.key]; Object.assign(ctx, splitVals(f, ctx[f.key])); }
-    return ctx;
-  }
-
-  function parseBackMemo(v, d) {
-    const page = d._page('back');
-    const vals = { [page.head.key]: memoField(v, page.head.label) || page.head.default || '' };
-    for (const f of page.fields) { const x = memoField(v, f.label); vals[f.key] = x == null ? (f.default || '') : x; }
-    return { vals, methods: parseMethodMemos(v, d) };
-  }
-  function backRender(d, vals, methods) {
-    const page = d._page('back');
-    const ctx = pageCtx(page, vals);
-    ctx.first_method = methods[0] ? methods[0].name : '';
-    const trs = [];
-    const ml = methods.map(m => methodLines(d, m, trs));
-    const methodsBlock = [];
-    ml.forEach((l, i) => { if (i) methodsBlock.push(''); methodsBlock.push(...l); });
-    const uses = [];
-    const push = x => { if (x && !uses.includes(x)) uses.push(x); };
-    lines(page.uses, ctx).forEach(push);
-    for (const u of page.uses_from_args || []) if (methods.some(m => String(m.arg || '').includes(u.has))) push(fill(u.t, ctx));
-    for (const m of methods) for (const n of flat(m.nodes)) { const t = tagOf(d, n); if (t && t.uses) t.uses.forEach(push); }
-    const outputs = (page.outputs || []).map(o => {
-      if (o.need && !cond(o.need, ctx)) return { title: fill(o.title, ctx), missing: o.missing };
-      return { title: fill(o.title, ctx), code: lines(o.code, ctx, { uses, methods: methodsBlock }).join('\n') };
-    });
-    return { outputs, trs };
-  }
-
-  /* ================= ページ（フロントエンド） ================= */
-
-  function elementSeq(el, pctx) {
-    const seq = [];
-    for (const it of el.code || []) {
-      let t, c = null;
-      if (typeof it === 'string') t = it;
-      else { t = it.t; c = it.if == null ? null : (Array.isArray(it.if) ? it.if : [it.if]); }
-      if (c) {
-        const pc = c.filter(x => /^!?page\./.test(x));
-        if (!cond(pc, pctx)) continue;
-        c = c.filter(x => !/^!?page\./.test(x));
-      }
-      if (!t.trim()) continue;
-      seq.push({ t: t.trim(), optional: !!(c && c.length), set: c ? condSet(c) : {} });
-    }
-    return seq;
-  }
-  function frontForward(code, d) {
-    const page = d._page('front');
-    const layoutM = /@extends\(\s*['"]([^'"]+)['"]\s*\)/.exec(code);
-    const counts = new Map();
-    code.replace(/class="([^"]*)"/g, (m, c) => {
-      c.split(/\s+/).forEach(x => { const i = x.indexOf('__'); if (i > 0) { const b = x.slice(0, i); counts.set(b, (counts.get(b) || 0) + 1); } });
-      return m;
-    });
-    let blk = '', best = 0;
-    for (const [k, v] of counts) if (v > best) { blk = k; best = v; }
-    const fm = /<form\b[^>]*>/i.exec(code);
-    let send = '';
-    if (fm) {
-      const a = /action="([^"]*)"/i.exec(fm[0]), mt = /method="([^"]*)"/i.exec(fm[0]);
-      if (a) send = `${(mt ? mt[1] : 'GET').toUpperCase()} ${a[1]}`;
-    }
-    const old = /old\(/.test(code) ? 'する' : 'しない';
-    const err = /@error\(/.test(code) ? 'する' : 'しない';
-    const pctx = { 'page.blk': blk, 'page.old': old, 'page.err': err, 'page.layout': layoutM ? layoutM[1] : '' };
-    const ls = code.split('\n').map(x => x.trim()).filter(Boolean);
-    const found = [];
-    const seqs = (d.elements || []).map(el => ({ el, seq: elementSeq(el, pctx) }));
-    let i = 0;
-    while (i < ls.length) {
-      let hit = null;
-      for (const { el, seq } of seqs) {
-        let j = i, o = {}, ok = true;
-        for (const it of seq) {
-          const m = j < ls.length ? matchTpl(it.t, ls[j], pctx) : null;
-          if (m) { for (const k in m) if (!(k in o)) o[k] = m[k]; Object.assign(o, Object.assign({}, it.set, o)); j++; }
-          else if (!it.optional) { ok = false; break; }
-        }
-        if (ok && j > i) { hit = { el, o, next: j }; break; }
-      }
-      if (hit) {
-        const o = Object.fromEntries((hit.el.slots || []).map(s => [s.key, hit.o[s.key] == null ? (s.default || '') : hit.o[s.key]]));
-        found.push({ el: hit.el, o });
-        i = hit.next;
-      } else i++;
-    }
-    const top = found.find(f => f.el.place === 'top' && (f.el.slots || []).some(s => s.key === 'text'));
-    const screen = top ? `${top.o.text}画面` : blk;
-    const vals = { file: '', layout: layoutM ? layoutM[1] : '', blk, send, old, err };
-    const memo = [`【${page.head.label}】${screen}`];
-    for (const f of page.fields) memo.push(`【${f.label}】${vals[f.key] == null ? '' : vals[f.key]}`);
-    memo.push(`【${page.elements_label}】`);
-    for (const f of found) {
-      const v = (f.el.slots || []).map(s => f.o[s.key] || '');
-      while (v.length && v[v.length - 1] === '') v.pop();
-      memo.push(`${f.el.name}：${v.join(' / ')}`);
-    }
-    const read = [
-      { text: `【${field(page, 'file')}】中身からは分からないので空欄` },
-      { text: `【${field(page, 'layout')}】${vals.layout ? `@extends('${vals.layout}') から` : '@extends が無いので空欄'}` },
-      { text: `【${field(page, 'blk')}】__ の前で一番多い名前 ${blk || '（なし）'} をブロック名として読む（BEM）` },
-      { text: `【${field(page, 'send')}】${send ? `form の method と action から ${send}` : 'form が無いので空欄'}` },
-      { text: `【${field(page, 'old')}】${old}：${old === 'する' ? 'old() がある（パスワードの欄は残さない）' : 'old() が無い'}` },
-      { text: `【${field(page, 'err')}】${err}：${err === 'する' ? '@error がある' : '@error が無い'}` }
-    ];
-    const trs = found.map(f => ({ tr: text(f.el.tr, f.o), id: f.el.id, tag: f.el.name }));
-    return { memo: memo.join('\n'), read, trs, id: page.id };
-  }
-
-  function parseFrontMemo(v, d) {
-    const page = d._page('front');
-    const vals = { [page.head.key]: memoField(v, page.head.label) || '' };
-    for (const f of page.fields) { const x = memoField(v, f.label); vals[f.key] = x == null ? (f.default || '') : x; }
-    const ls = v.split('\n');
-    const i0 = ls.findIndex(l => l.trim() === `【${page.elements_label}】`);
-    const els = (i0 < 0 ? [] : ls.slice(i0 + 1)).filter(l => l.trim() && !/^\s*【/.test(l)).map(l => {
-      const m = l.trim().match(/^([^：:]+)[：:]\s*(.*)$/);
-      if (!m) return null;
-      const el = d._elByName[m[1].trim()];
-      const a = m[2].split(' / ').map(x => x.trim());
-      if (!el) return { name: m[1].trim(), raw: m[2], o: {} };
-      return { name: el.name, o: Object.fromEntries((el.slots || []).map((s, i) => [s.key, a[i] != null && a[i] !== '' ? a[i] : (i < a.length ? '' : (s.default || ''))])) };
-    }).filter(Boolean);
-    return { vals, els };
-  }
-  function frontRender(d, vals, els) {
-    const page = d._page('front');
-    const ctx = pageCtx(page, vals);
-    const pctx = {};
-    for (const f of page.fields) pctx[`page.${f.key}`] = ctx[f.key];
-    const blocks = { top: [], form: [], bottom: [] };
-    for (const e of els) {
-      const el = d._elByName[e.name];
-      let L, place;
-      if (!el) { L = [`{{-- ${e.name}：${e.raw}（辞書にない要素） --}}`]; place = 'bottom'; }
-      else { L = lines(el.code, Object.assign({}, e.o, pctx)); place = el.place; }
-      const b = blocks[place] || blocks.bottom;
-      if (b.length) b.push('');
-      b.push(...L);
-    }
-    const outputs = (page.outputs || []).map(o => ({ title: fill(o.title, ctx), code: lines(o.code, ctx, blocks).join('\n') }));
-    const notes = (page.notes || []).filter(n => cond(n.if, ctx)).map(n => ({ code: n.code, tr: n.tr }));
-    const trs = els.map(e => {
-      const el = d._elByName[e.name];
-      return el ? { tr: text(el.tr, e.o), id: el.id, tag: el.name } : { tr: `${e.name}（辞書にない要素）`, id: null, tag: e.name, unknown: true };
-    });
-    return { outputs, notes, trs };
-  }
-
-  /* ================= 1行 ================= */
-
-  function partsOf(s, d) {
-    const out = [];
-    for (const p of d.parts || []) {
-      const { re, names } = tplRegex(p.pattern, null, { noStart: true, noEnd: true });
-      const m = re.exec(s);
-      if (!m) continue;
-      const o = {};
-      names.forEach((n, i) => { if (!(n.name in o)) o[n.name] = unfilter(m[i + 1], n.filters); });
-      out.push({ code: m[0].trim(), meaning: fill(p.meaning, o), id: p.id, note: p.note || '' });
-    }
-    return out;
-  }
-  function lineForward(code, d) {
-    const stmts = splitStatements(stripComments(code));
-    const rows = [];
-    const parts = [];
-    for (const s of stmts) {
-      const nodes = parseStmt(s, 'stmt', d);
-      const n = nodes[0];
-      const ps = partsOf(s, d);
-      ps.forEach(p => { if (!parts.some(x => x.id === p.id)) parts.push(p); });
-      if (n.unknown) rows.push({ code: s, miss: !ps.length, tr: ps.length ? `（辞書にない：${norm(s)}）` : null });
-      else {
-        const t = tagOf(d, n);
-        rows.push({ code: s, tr: describe(d, n), id: t.id, tag: t.name, note: t.note || '' });
-      }
-    }
-    return { rows, parts };
-  }
-
-  function rlineCandidates(v, d) {
-    return d.tags.map((t, i) => ({ t, i, n: (t.keywords || []).filter(k => v.includes(k)).length }))
-      .filter(x => x.n > 0).sort((a, b) => b.n - a.n || a.i - b.i).slice(0, 5).map(x => x.t);
-  }
-  function renderOne(d, tag, o) {
-    const n = makeNode(tag, o);
-    const trs = [];
-    const ctx = tag.kind === 'chain' || tag.kind === 'inner' ? 'chain' : 'stmt';
-    const L = renderNodes([n], ctx, 0, d, trs);
-    return { code: L.join('\n'), tr: text(tag.tr, n.o), id: tag.id };
-  }
-
-  /* ================= 判定 ================= */
-
-  function detectCode(v, d) {
-    if (/^\s*【/m.test(v)) {
-      const heads = ['back', 'front'].map(k => d._page(k)).filter(Boolean).map(p => `【${p.head.label}】`);
-      return heads.some(h => v.includes(h)) ? 'rpage' : 'rmethod';
-    }
-    const codeLike = /[;{}$<>]|->|=>|::|^\s*(php|npm|git|docker|cd)\b/m.test(v);
-    if (!codeLike) {
-      const n = d.tags.filter(t => (t.keywords || []).some(k => v.includes(k))).length;
-      return n >= 2 ? 'rmethod' : 'rline';
-    }
-    if (/<\?php|\bclass\s+\w+/.test(v)) return 'back';
-    if (/@extends|@section|\{\{|export default|return\s*\(\s*</.test(v)) return 'front';
-    if (/function\s+\w+\s*\(|=>\s*\{/.test(v)) return 'method';
-    return 'line';
-  }
-
-  /* ================= エラー ================= */
-
-  function errorFind(v, d, forced) {
-    const ls = String(v).split('\n');
-    for (const line of ls) {
-      if (!line.trim()) continue;
-      const e = (d.errors || []).find(x => line.includes(x.mark) && (!forced || x.source === forced || x.source === 'どこでも'));
-      const src = (d.error_sources || []).map(s => ({ s, mark: (s.marks || []).find(m => line.includes(m)) })).find(x => x.mark);
-      if (e) {
-        const s = (d.error_sources || []).find(x => x.name === e.source);
-        const mark = (s && (s.marks || []).find(m => line.includes(m))) || e.mark;
-        return { error: e, line, source: forced || e.source, mark };
-      }
-      if (src) return { error: null, line, source: forced || src.s.name, mark: src.mark };
-    }
-    if (forced) return { error: null, line: ls.find(l => l.trim()) || '', source: forced, mark: null };
-    return null;
-  }
-  function errorView(found) {
-    const e = found.error;
-    let vars = {};
-    if (e.extract) { try { const m = new RegExp(e.extract).exec(found.line); if (m && m.groups) vars = Object.assign({}, m.groups); } catch (x) { /* 抜き出せない時は空のまま */ } }
-    const F = s => fill(s, vars);
-    return {
-      id: e.id, vars,
-      happened: (e.happened || []).map(F),
-      stopped: e.stopped ? { at: e.stopped.at, where: F(e.stopped.where || ''), ok: F(e.stopped.ok || '') } : null,
-      causes: (e.causes || []).slice(0, 3).map(F),
-      steps: (e.steps || []).map(s => ({
-        cmd: F(s.cmd), desc: F(s.desc || ''),
-        branches: (s.branches || []).map(b => ({
-          text: F(b.label) + ' → ' + (b.go === 'step' ? `手順${b.step}へ` : b.go === 'cause' ? `確定：${F(b.text || '')}（候補${b.cause}）` : '辞書の外。未登録の一覧へ'),
-          when: b.when, go: b.go
-        }))
-      }))
-    };
-  }
-  function branchHit(when, txt, emptyPressed, vars) {
-    const t = String(txt || '');
-    if (!t.trim() && !emptyPressed) return false;
-    const low = t.toLowerCase();
-    const F = s => fill(s, vars || {}).toLowerCase();
-    if (!when) return false;
-    if (when.empty) return !!emptyPressed && !t.trim();
-    if (when.line_has) { const ws = when.line_has.map(F); return t.split('\n').some(l => ws.every(w => l.toLowerCase().includes(w))); }
-    if (when.has != null) return low.includes(F(when.has));
-    if (when.not_has != null) return !!t.trim() && !low.includes(F(when.not_has));
-    return false;
-  }
-
-  /* ================= 機能解説 ================= */
-
-  function featHits(v, d) {
-    return (d.headwords || []).filter(h => [h.word, ...(h.aliases || [])].some(w => w && v.includes(w))).map(h => h.word);
-  }
-  function featRank(v, d) {
-    const hits = featHits(v, d);
-    const ranked = (d.examples || []).map((e, i) => ({ e, i, n: (e.words || []).filter(w => hits.includes(w)).length }))
-      .filter(x => x.n > 0).sort((a, b) => b.n - a.n || a.i - b.i).slice(0, 5);
-    return { hits, ranked };
-  }
-  function featDefaultSelection(ranked) {
-    return ranked.filter(x => x.n >= 2).sort((a, b) => a.i - b.i).map(x => x.e.id);
-  }
-  function featQuestions(d, selected, answers) {
-    const ask = new Set();
-    for (const id of selected) { const e = (d.examples || []).find(x => x.id === id); if (e) (e.ask || []).forEach(a => ask.add(a)); }
-    const ctx = featAnswers(d, answers);
-    return (d.questions || []).filter(q => ask.has(q.id) && cond(q.show_if, ctx));
-  }
-  function featAnswers(d, answers) {
-    const ctx = {};
-    for (const q of d.questions || []) ctx[q.id] = q.default == null ? '' : q.default;
-    for (const k in answers || {}) if (answers[k] != null) ctx[k] = answers[k];
-    return ctx;
-  }
-  function featResult(v, d, selected, answers) {
-    const ctx = featAnswers(d, answers);
-    const order = d.step_order || [];
-    const frags = String(v).split(/[。、\n]/).map(x => x.trim()).filter(Boolean);
-    const aliasOf = w => { const h = (d.headwords || []).find(x => x.word === w); return h ? [h.word, ...(h.aliases || [])] : [w]; };
-    const exs = selected.map(id => (d.examples || []).find(x => x.id === id)).filter(Boolean);
-    const rows = [];
-    let seq = 0;
-    for (const e of exs) for (const r of e.rows || []) {
-      if (!cond(r.if, ctx)) continue;
-      let txt, pos = Infinity;
-      if (r.fixed != null) txt = r.fixed;
-      else {
-        let best = -1, bi = -1;
-        frags.forEach((f, i) => { const c = (r.words || []).filter(w => aliasOf(w).some(a => f.includes(a))).length; if (c > best) { best = c; bi = i; } });
-        if (best > 0) { txt = frags[bi]; pos = bi; } else txt = `（${(r.words || []).join('・')}）`;
-      }
-      const key = `${txt}|${r.action}|${r.files}`;
-      if (rows.some(x => x.key === key)) continue;
-      const ks = String(r.files || '').split(/[・,、]/).map(x => order.indexOf(x.trim())).filter(x => x >= 0);
-      rows.push({ key, text: txt, action: fill(r.action, ctx), files: r.files, k1: ks.length ? Math.min(...ks) : order.length, k2: pos, k3: seq++, ex: e.id });
-    }
-    rows.sort((a, b) => a.k1 - b.k1 || a.k2 - b.k2 || a.k3 - b.k3);
-    const items = [];
-    const boxes = {};
-    for (const e of exs) for (const s of e.steps || []) {
-      if (!cond(s.if, ctx)) continue;
-      if (s.to) {
-        const fs = (d.file_steps || []).find(x => x.id === s.to);
-        if (!fs) continue;
-        if (!boxes[fs.id]) { boxes[fs.id] = { fs, lists: {}, kind: fs.kind, seq: items.length, from: [] }; items.push(boxes[fs.id]); }
-        const b = boxes[fs.id];
-        if (!b.from.includes(e.id)) b.from.push(e.id);
-        for (const k of Object.keys(s.add || {})) {
-          b.lists[k] = b.lists[k] || [];
-          for (const x of s.add[k]) if (!b.lists[k].includes(x)) b.lists[k].push(x);
-        }
-      } else items.push({ own: s, kind: s.kind, seq: items.length, from: [e.id] });
-    }
-    const idx = k => { const i = order.indexOf(k); return i < 0 ? order.length : i; };
-    items.sort((a, b) => idx(a.kind) - idx(b.kind) || a.seq - b.seq);
-    const steps = items.map(it => {
-      if (it.own) {
-        const s = it.own;
-        return { title: fill(s.title || '', ctx), cmds: (s.cmds || []).map(c => ({ cmd: fill(c.cmd, ctx), desc: fill(c.desc || '', ctx) })), where: s.where ? fill(s.where, ctx) : '', code: s.code ? lines(s.code, ctx).join('\n') : '', from: it.from };
-      }
-      const fs = it.fs;
-      const c = Object.assign({}, ctx);
-      for (const k of fs.lists || []) c[k] = it.lists[k] || [];
-      const blocks = {};
-      for (const k of fs.lists || []) blocks[k] = it.lists[k] || [];
-      return { title: fill(fs.title || '', c), cmds: (fs.cmds || []).map(x => ({ cmd: fill(x.cmd, c), desc: fill(x.desc || '', c) })), where: fs.where ? fill(fs.where, c) : '', code: fs.code ? lines(fs.code, c, blocks).join('\n') : '', id: fs.id, from: it.from };
-    });
-    return { rows, steps };
-  }
-
-  /* ================= 未登録の一覧の引き直し ================= */
-
-  function resolvable(entry, kind, d) {
-    const k = kind || '';
-    const tries = {
-      line: () => { const st = splitStatements(entry); return st.length > 0 && st.every(s => !parseStmt(s, 'stmt', d)[0].unknown); },
-      rline: () => rlineCandidates(entry, d).length > 0,
-      rmethod: () => keywordNodes(entry, d).length > 0,
-      feat: () => featRank(entry, d).ranked.length > 0,
-      err: () => { const m = /^\[([^\]]+)\]\s*(.*)$/.exec(entry); const f = errorFind(m ? m[2] : entry, d, m ? m[1] : null); return !!(f && f.error); },
-      tag: () => !!d._tagByName[entry.replace(/^札[：:]\s*/, '')],
-      element: () => !!d._elByName[entry.replace(/^画面の要素[：:]\s*/, '').split(/[：:]/)[0]]
-    };
-    if (tries[k]) return tries[k]();
-    return false;
-  }
-
-  return {
-    toList, fill, cond, lines, text, tidy, norm, squash,
-    buildDict, loadAll, addMissing, checkShape, jsonErrorLine, SHELF_FIELDS, KINDS,
-    splitStatements, splitChain, parseStmts, parseStmt, renderNodes, memoTagLines, parseTagLines, keywordNodes,
-    flat, flatPaths, makeNode, defaults,
-    methodForward, methodInfo, methodLines, parseMethodMemos, guessName, guessArg, returnLine, methodWhen,
-    backForward, parseBackMemo, backRender, frontForward, parseFrontMemo, frontRender,
-    lineForward, partsOf, rlineCandidates, renderOne, detectCode,
-    errorFind, errorView, branchHit,
-    featHits, featRank, featDefaultSelection, featQuestions, featAnswers, featResult,
-    resolvable
-  };
-});

@@ -1,0 +1,3412 @@
+{
+  "format": 2,
+  "layer": "content",
+  "tech": "laravel",
+  "label": "app04×翻訳",
+  "note": "app04（カテゴリ付きTODO）の自作ファイル30本を読むのに要る札。言葉は凍結モックの札から取った",
+  "tags": [
+    {
+      "id": "php-method",
+      "name": "メソッド",
+      "lang": "php",
+      "kind": "block",
+      "from": "Laravel",
+      "gap": true,
+      "slots": [
+        {
+          "key": "name",
+          "label": "名前",
+          "default": "index"
+        },
+        {
+          "key": "arg",
+          "label": "受け取るもの",
+          "default": ""
+        },
+        {
+          "key": "ret",
+          "label": "返す型（空可）",
+          "default": ""
+        }
+      ],
+      "open": [
+        {
+          "if": "ret",
+          "t": "public function 《name》(《arg》): 《ret》"
+        },
+        {
+          "if": "!ret",
+          "t": "public function 《name》(《arg》)"
+        },
+        "{"
+      ],
+      "close": "}",
+      "uses": [
+        {
+          "if": "arg^=Request $request",
+          "t": "use Illuminate\\Http\\Request;"
+        },
+        {
+          "if": "ret=Response",
+          "t": "use Inertia\\Response;"
+        },
+        {
+          "if": "ret=RedirectResponse",
+          "t": "use Illuminate\\Http\\RedirectResponse;"
+        }
+      ],
+      "tr": [
+        "《name|words:method》に動く処理",
+        {
+          "if": "arg",
+          "t": "。受け取るもの：《arg》"
+        }
+      ],
+      "o": 0,
+      "in": [
+        {
+          "file": "file-controller",
+          "sec": "methods",
+          "n": 0
+        },
+        {
+          "file": "file-action",
+          "sec": "methods",
+          "n": 0
+        }
+      ]
+    },
+    {
+      "id": "php-request-get",
+      "name": "受け取る",
+      "lang": "php",
+      "kind": "line",
+      "from": "Laravel",
+      "slots": [
+        {
+          "key": "var",
+          "label": "入れる変数",
+          "default": "keyword",
+          "pattern": "\\w+"
+        },
+        {
+          "key": "field",
+          "label": "欄",
+          "default": "keyword"
+        }
+      ],
+      "code": "$《var》 = $request->《field》;",
+      "tr": "送られてきた中身から 《field》 の値を取り出し、変数 《var》 に入れる",
+      "k": [
+        "受け取"
+      ],
+      "sum": "値を受け取り",
+      "o": 1,
+      "in": [
+        {
+          "file": "file-controller",
+          "sec": "methods",
+          "n": 1
+        }
+      ]
+    },
+    {
+      "id": "php-only",
+      "name": "送られた欄だけ取る",
+      "lang": "php",
+      "kind": "line",
+      "from": "Laravel",
+      "slots": [
+        {
+          "key": "var",
+          "label": "入れる変数",
+          "default": "todo",
+          "pattern": "\\w+"
+        },
+        {
+          "key": "fields",
+          "label": "欄（,で区切る）",
+          "default": "content"
+        }
+      ],
+      "code": "$《var》 = $request->only([《fields|quote_list》]);",
+      "tr": "送られてきた中身のうち 《fields|join_dot》 だけを取り出し、変数 《var》 に入れる",
+      "o": 2,
+      "in": [
+        {
+          "file": "file-controller",
+          "sec": "methods",
+          "n": 2
+        }
+      ]
+    },
+    {
+      "id": "php-set",
+      "name": "値を1つ足す",
+      "lang": "php",
+      "kind": "line",
+      "from": "Laravel",
+      "slots": [
+        {
+          "key": "var",
+          "label": "変数",
+          "default": "todo",
+          "pattern": "\\w+"
+        },
+        {
+          "key": "key",
+          "label": "カラム",
+          "default": "user_id"
+        },
+        {
+          "key": "val",
+          "label": "値",
+          "default": "auth()->id()"
+        }
+      ],
+      "code": "$《var》['《key》'] = 《val》;",
+      "tr": "変数 《var》 のカラム 《key》 に、値 《val》 を入れる",
+      "o": 5,
+      "in": [
+        {
+          "file": "file-controller",
+          "sec": "methods",
+          "n": 5
+        }
+      ]
+    },
+    {
+      "id": "php-all",
+      "name": "全件取り出す",
+      "lang": "php",
+      "kind": "line",
+      "from": "Laravel",
+      "slots": [
+        {
+          "key": "var",
+          "label": "入れる変数",
+          "default": "tasks",
+          "pattern": "\\w+"
+        },
+        {
+          "key": "model",
+          "label": "モデル",
+          "default": "Task",
+          "pattern": "(?!DB(?![\\w\\\\]))\\\\?(?:[A-Za-z_]\\w*\\\\)*[A-Za-z_]\\w*"
+        }
+      ],
+      "code": "$《var》 = 《model》::all();",
+      "tr": "テーブル 《model|base|table》 の行を全部取り出し、変数 《var》 に入れる",
+      "sum": "全部取り出し",
+      "o": 8,
+      "in": [
+        {
+          "file": "file-controller",
+          "sec": "methods",
+          "n": 8
+        }
+      ]
+    },
+    {
+      "id": "php-query",
+      "name": "取り出し始め",
+      "lang": "php",
+      "kind": "chain_head",
+      "from": "Laravel",
+      "slots": [
+        {
+          "key": "var",
+          "label": "入れる変数",
+          "default": "memos",
+          "pattern": "\\w+"
+        },
+        {
+          "key": "model",
+          "label": "モデル",
+          "default": "Memo",
+          "pattern": "(?!DB(?![\\w\\\\]))\\\\?(?:[A-Za-z_]\\w*\\\\)*[A-Za-z_]\\w*"
+        }
+      ],
+      "code": "$《var》 = 《model》::query()",
+      "reads": [
+        "$《var》 = 《model》::"
+      ],
+      "chains": [
+        "php-with",
+        "php-when",
+        "php-where",
+        "php-order",
+        "php-get",
+        "php-scope-call"
+      ],
+      "tr": "テーブル 《model|base|table》 から取り出す準備をする。下の条件を重ねて、結果を変数 《var》 に入れる",
+      "sum": "取り出し",
+      "o": 9,
+      "in": [
+        {
+          "file": "file-controller",
+          "sec": "methods",
+          "n": 9
+        },
+        {
+          "file": "file-fortify",
+          "sec": "boot",
+          "n": 7
+        }
+      ]
+    },
+    {
+      "id": "php-with",
+      "name": "まとめて取る",
+      "lang": "php",
+      "kind": "chain",
+      "from": "Laravel",
+      "slots": [
+        {
+          "key": "rels",
+          "label": "つながり（,で区切る）",
+          "default": "user"
+        }
+      ],
+      "code": "->with(《rels|quote_list》)",
+      "tr": "つながり 《rels|join_dot》 の中身も一度に取っておく",
+      "k": [
+        "まとめて"
+      ],
+      "point": "with()：先にまとめて取る。無いと、画面で1件ごとに問い合わせが走る（N+1問題）",
+      "o": 10
+    },
+    {
+      "id": "php-where",
+      "name": "絞り込む",
+      "lang": "php",
+      "kind": "chain",
+      "from": "Laravel",
+      "slots": [
+        {
+          "key": "col",
+          "label": "カラム",
+          "default": "title"
+        },
+        {
+          "key": "op",
+          "label": "比べ方",
+          "default": "含む",
+          "options": [
+            "同じ",
+            "違う",
+            "含む"
+          ]
+        },
+        {
+          "key": "val",
+          "label": "値",
+          "default": "$keyword"
+        }
+      ],
+      "code": [
+        {
+          "if": "op=同じ",
+          "t": "->where('《col》', 《val》)"
+        },
+        {
+          "if": "op=違う",
+          "t": "->where('《col》', '!=', 《val》)"
+        },
+        {
+          "if": "op=含む",
+          "t": "->where('《col》', 'like', '%' . 《val》 . '%')"
+        }
+      ],
+      "tr": [
+        "カラム 《col》 が 《val》 ",
+        {
+          "if": "op=同じ",
+          "t": "と同じ"
+        },
+        {
+          "if": "op=違う",
+          "t": "と違う"
+        },
+        {
+          "if": "op=含む",
+          "t": "を含む"
+        },
+        "ものに絞る"
+      ],
+      "k": [
+        "絞"
+      ],
+      "sum": "条件で絞り込んで",
+      "point": "重ねた条件は、すべて同時に満たすものだけが残る（AND）",
+      "o": 11
+    },
+    {
+      "id": "php-order",
+      "name": "並べる",
+      "lang": "php",
+      "kind": "chain",
+      "from": "Laravel",
+      "slots": [
+        {
+          "key": "col",
+          "label": "カラム",
+          "default": "sort_order"
+        },
+        {
+          "key": "dir",
+          "label": "向き",
+          "default": "小さい順",
+          "options": [
+            "小さい順",
+            "大きい順"
+          ]
+        }
+      ],
+      "code": [
+        {
+          "if": "dir=小さい順",
+          "t": "->orderBy('《col》')"
+        },
+        {
+          "if": "dir=大きい順",
+          "t": "->orderBy('《col》', 'desc')"
+        }
+      ],
+      "tr": "カラム 《col》 の《dir》に並べる",
+      "o": 12
+    },
+    {
+      "id": "php-scope-call",
+      "name": "自作の絞り込みを使う",
+      "lang": "php",
+      "kind": "chain",
+      "from": "自作",
+      "slots": [
+        {
+          "key": "name",
+          "label": "部品の名前",
+          "default": "KeywordSearch"
+        },
+        {
+          "key": "val",
+          "label": "渡す値",
+          "default": "$request->keyword"
+        }
+      ],
+      "catch_all": "name",
+      "code": "->《name》(《val》)",
+      "tr": "モデルに作った絞り込み 《name》 に 《val》 を渡して使う（中身は、モデルの中の scope《name》 を見て）",
+      "o": 13
+    },
+    {
+      "id": "php-get",
+      "name": "実行する",
+      "lang": "php",
+      "kind": "chain",
+      "from": "Laravel",
+      "slots": [
+        {
+          "key": "how",
+          "label": "取り方",
+          "default": "全部",
+          "options": [
+            "全部",
+            "1件"
+          ]
+        }
+      ],
+      "code": [
+        {
+          "if": "how=全部",
+          "t": "->get()"
+        },
+        {
+          "if": "how=1件",
+          "t": "->first()"
+        }
+      ],
+      "tr": [
+        "ここでDBに問い合わせを送り、",
+        {
+          "if": "how=全部",
+          "t": "結果をまとめて"
+        },
+        {
+          "if": "how=1件",
+          "t": "最初の1件を"
+        },
+        "受け取る"
+      ],
+      "k": [
+        "一覧を",
+        "全部"
+      ],
+      "point": [
+        {
+          "if": "how=全部",
+          "t": "get()：全件を取る。ページ分けはしない"
+        },
+        {
+          "if": "how=1件",
+          "t": "first()：最初の1件だけを取る"
+        }
+      ],
+      "o": 14
+    },
+    {
+      "id": "php-create",
+      "name": "保存する",
+      "lang": "php",
+      "kind": "line",
+      "from": "Laravel",
+      "slots": [
+        {
+          "key": "model",
+          "label": "モデル",
+          "default": "Memo",
+          "pattern": "(?!DB(?![\\w\\\\]))\\\\?(?:[A-Za-z_]\\w*\\\\)*[A-Za-z_]\\w*"
+        },
+        {
+          "key": "data",
+          "label": "保存する中身",
+          "default": "$request->only(['title', 'body'])"
+        }
+      ],
+      "code": "《model》::create(《data》);",
+      "tr": "《data》 の中身で、テーブル 《model|base|table》 に1件保存する",
+      "k": [
+        "保存"
+      ],
+      "sum": "保存し",
+      "o": 15,
+      "in": [
+        {
+          "file": "file-controller",
+          "sec": "methods",
+          "n": 10
+        }
+      ]
+    },
+    {
+      "id": "php-create-arr",
+      "name": "保存する（カラムごと）",
+      "lang": "php",
+      "kind": "block",
+      "from": "Laravel",
+      "slots": [
+        {
+          "key": "model",
+          "label": "モデル",
+          "default": "Task",
+          "pattern": "(?!DB(?![\\w\\\\]))\\\\?(?:[A-Za-z_]\\w*\\\\)*[A-Za-z_]\\w*"
+        },
+        {
+          "key": "ret",
+          "label": "保存した1件を返す（空可）",
+          "default": "",
+          "options": [
+            {
+              "v": "",
+              "label": "返さない"
+            },
+            "返す"
+          ]
+        }
+      ],
+      "open": [
+        {
+          "if": "ret=返す",
+          "t": "return 《model》::create(["
+        },
+        {
+          "if": "!ret",
+          "t": "《model》::create(["
+        }
+      ],
+      "close": "]);",
+      "tr": [
+        "下のカラムと値で、テーブル 《model|base|table》 に1件保存する",
+        {
+          "if": "ret=返す",
+          "t": "。保存した1件を、この処理の結果として返す"
+        }
+      ],
+      "o": 16,
+      "in": [
+        {
+          "file": "file-controller",
+          "sec": "methods",
+          "n": 11
+        },
+        {
+          "file": "file-action",
+          "sec": "methods",
+          "n": 4
+        }
+      ]
+    },
+    {
+      "id": "php-pair",
+      "name": "カラムと値",
+      "lang": "php",
+      "kind": "line",
+      "from": "Laravel",
+      "memo": "inline",
+      "slots": [
+        {
+          "key": "key",
+          "label": "カラム",
+          "default": "content"
+        },
+        {
+          "key": "val",
+          "label": "値",
+          "default": "$request->content"
+        }
+      ],
+      "code": "'《key》' => 《val》,",
+      "tr": "カラム 《key》 に、値 《val》",
+      "o": 18,
+      "in": [
+        {
+          "file": "file-controller",
+          "sec": "methods",
+          "n": 12
+        },
+        {
+          "file": "file-model",
+          "sec": "rels",
+          "n": 6
+        },
+        {
+          "file": "file-factory",
+          "sec": "fields",
+          "n": 0
+        },
+        {
+          "file": "file-fortify",
+          "sec": "boot",
+          "n": 6
+        },
+        {
+          "file": "file-action",
+          "sec": "methods",
+          "n": 5
+        }
+      ]
+    },
+    {
+      "id": "php-update",
+      "name": "直す",
+      "lang": "php",
+      "kind": "line",
+      "from": "Laravel",
+      "slots": [
+        {
+          "key": "var",
+          "label": "直す変数",
+          "default": "memo",
+          "pattern": "\\w+"
+        },
+        {
+          "key": "data",
+          "label": "直す中身",
+          "default": "$request->only(['title', 'body'])"
+        }
+      ],
+      "code": "$《var》->update(《data》);",
+      "tr": "変数 《var》 の1件を、《data》 の中身で書き換えて保存する",
+      "k": [
+        "直",
+        "更新"
+      ],
+      "sum": "書き換えて保存し",
+      "o": 19,
+      "in": [
+        {
+          "file": "file-controller",
+          "sec": "methods",
+          "n": 13
+        }
+      ]
+    },
+    {
+      "id": "php-delete",
+      "name": "消す",
+      "lang": "php",
+      "kind": "line",
+      "from": "Laravel",
+      "slots": [
+        {
+          "key": "var",
+          "label": "消す変数",
+          "default": "memo",
+          "pattern": "\\w+"
+        }
+      ],
+      "code": "$《var》->delete();",
+      "tr": "変数 《var》 の1件をテーブルから消す",
+      "k": [
+        "消",
+        "削除"
+      ],
+      "sum": "消し",
+      "o": 20,
+      "in": [
+        {
+          "file": "file-controller",
+          "sec": "methods",
+          "n": 15
+        }
+      ]
+    },
+    {
+      "id": "php-attach",
+      "name": "付ける",
+      "lang": "php",
+      "kind": "line",
+      "from": "Laravel",
+      "slots": [
+        {
+          "key": "var",
+          "label": "誰の",
+          "default": "user",
+          "pattern": "\\w+"
+        },
+        {
+          "key": "rel",
+          "label": "つながり",
+          "default": "likes"
+        },
+        {
+          "key": "id",
+          "label": "付ける番号",
+          "default": "$item->id"
+        }
+      ],
+      "code": "$《var》->《rel》()->attach(《id》);",
+      "tr": "変数 《var》 のつながり 《rel》 に、番号 《id》 を付ける（中間テーブルに1行足す）",
+      "k": [
+        "付け"
+      ],
+      "sum": "付け",
+      "o": 21,
+      "in": [
+        {
+          "file": "file-controller",
+          "sec": "methods",
+          "n": 16
+        }
+      ]
+    },
+    {
+      "id": "php-detach",
+      "name": "外す",
+      "lang": "php",
+      "kind": "line",
+      "from": "Laravel",
+      "slots": [
+        {
+          "key": "var",
+          "label": "誰の",
+          "default": "user",
+          "pattern": "\\w+"
+        },
+        {
+          "key": "rel",
+          "label": "つながり",
+          "default": "likes"
+        },
+        {
+          "key": "id",
+          "label": "外す番号",
+          "default": "$item->id"
+        }
+      ],
+      "code": [
+        {
+          "if": "id",
+          "t": "$《var》->《rel》()->detach(《id》);"
+        },
+        {
+          "if": "!id",
+          "t": "$《var》->《rel》()->detach();"
+        }
+      ],
+      "tr": [
+        {
+          "if": "id",
+          "t": "変数 《var》 のつながり 《rel》 から、番号 《id》 を外す（中間テーブルの1行を消す）"
+        },
+        {
+          "if": "!id",
+          "t": "つながりの中身を全部外す（変数 《var》 のつながり 《rel》 の、中間テーブルの行を全部消す）"
+        }
+      ],
+      "k": [
+        "外し",
+        "外す"
+      ],
+      "sum": "外し",
+      "o": 22,
+      "in": [
+        {
+          "file": "file-controller",
+          "sec": "methods",
+          "n": 17
+        }
+      ]
+    },
+    {
+      "id": "php-file",
+      "name": "ファイルを保存",
+      "lang": "php",
+      "kind": "line",
+      "from": "Laravel",
+      "slots": [
+        {
+          "key": "var",
+          "label": "入れる変数",
+          "default": "path",
+          "pattern": "\\w+"
+        },
+        {
+          "key": "field",
+          "label": "欄",
+          "default": "image"
+        },
+        {
+          "key": "dir",
+          "label": "置き場所",
+          "default": "images"
+        }
+      ],
+      "code": "$《var》 = $request->file('《field》')->store('《dir》', 'public');",
+      "tr": "送られたファイル 《field》 を storage/app/public/《dir》 に保存し、置いた場所を変数 《var》 に入れる",
+      "o": 23,
+      "in": [
+        {
+          "file": "file-controller",
+          "sec": "methods",
+          "n": 18
+        }
+      ]
+    },
+    {
+      "id": "php-if",
+      "name": "分かれる",
+      "lang": "php",
+      "kind": "if",
+      "from": "Laravel",
+      "slots": [
+        {
+          "key": "cond",
+          "label": "条件",
+          "default": "$memo"
+        }
+      ],
+      "open": "if (《cond》) {",
+      "elif": "} elseif (《cond》) {",
+      "elif_reads": [
+        "} else if (《cond》) {"
+      ],
+      "elif_name": "そうでなければ、もし",
+      "elif_tr": "そうでなければ、もし 《cond》 なら下の処理をする",
+      "else": "} else {",
+      "close": "}",
+      "tr": "もし 《cond》 なら中の処理をする",
+      "k": [
+        "もし",
+        "分かれ"
+      ],
+      "cond_note": true,
+      "o": 24,
+      "in": [
+        {
+          "file": "file-controller",
+          "sec": "methods",
+          "n": 19
+        },
+        {
+          "file": "file-fortify",
+          "sec": "boot",
+          "n": 8
+        }
+      ]
+    },
+    {
+      "id": "php-return-view",
+      "name": "渡す",
+      "lang": "php",
+      "kind": "line",
+      "from": "Laravel",
+      "slots": [
+        {
+          "key": "view",
+          "label": "画面の名前",
+          "default": "memos.index"
+        },
+        {
+          "key": "vars",
+          "label": "渡す変数（,で区切る）",
+          "default": ""
+        }
+      ],
+      "code": [
+        {
+          "if": "vars",
+          "t": "return view('《view》', compact(《vars|quote_list》));"
+        },
+        {
+          "if": "!vars",
+          "t": "return view('《view》');"
+        }
+      ],
+      "returns": {
+        "form": "画面 《view》",
+        "hint": "画面 名前",
+        "desc": [
+          "画面 《view》",
+          {
+            "if": "vars",
+            "t": "（《vars|join_dot》 を渡したもの）"
+          }
+        ]
+      },
+      "tr": [
+        {
+          "if": "vars",
+          "t": "変数 《vars|join_dot》 を、"
+        },
+        "画面 resources/views/《view|path》.blade.php に渡して表示する"
+      ],
+      "k": [
+        "画面に渡",
+        "表示"
+      ],
+      "sum": "画面に渡す",
+      "o": 26,
+      "in": [
+        {
+          "file": "file-controller",
+          "sec": "methods",
+          "n": 21
+        }
+      ]
+    },
+    {
+      "id": "php-redirect-url",
+      "name": "URLへ移動",
+      "lang": "php",
+      "kind": "chain_head",
+      "from": "Laravel",
+      "slots": [
+        {
+          "key": "url",
+          "label": "行き先のURL",
+          "default": "/"
+        }
+      ],
+      "code": "return redirect('《url》')",
+      "chains": [
+        "php-flash"
+      ],
+      "returns": {
+        "form": "移動 《url》",
+        "hint": "移動 /URL",
+        "pattern": {
+          "url": "/.*"
+        },
+        "desc": "URL 《url》 へ移動"
+      },
+      "tr": "URL 《url》 へ移動する",
+      "o": 27,
+      "in": [
+        {
+          "file": "file-controller",
+          "sec": "methods",
+          "n": 22
+        }
+      ]
+    },
+    {
+      "id": "php-flash",
+      "name": "知らせを付ける",
+      "lang": "php",
+      "kind": "chain",
+      "from": "Laravel",
+      "slots": [
+        {
+          "key": "key",
+          "label": "知らせの名前",
+          "default": "message"
+        },
+        {
+          "key": "text",
+          "label": "文言",
+          "default": "保存しました"
+        }
+      ],
+      "code": "->with('《key》', '《text》')",
+      "tr": "知らせ 《key》 に「《text》」を入れて移動する。次の画面で session('《key》') で出せる",
+      "o": 31
+    },
+    {
+      "id": "php-return-var",
+      "name": "値を返す",
+      "lang": "php",
+      "kind": "line",
+      "from": "Laravel",
+      "slots": [
+        {
+          "key": "var",
+          "label": "返す変数",
+          "default": "user",
+          "pattern": "\\w+"
+        }
+      ],
+      "code": "return $《var》;",
+      "returns": {
+        "form": "値 《var》",
+        "hint": "値 変数",
+        "desc": "変数 《var》"
+      },
+      "tr": "変数 《var》 を結果として返す",
+      "o": 36,
+      "in": [
+        {
+          "file": "file-controller",
+          "sec": "methods",
+          "n": 29
+        },
+        {
+          "file": "file-fortify",
+          "sec": "boot",
+          "n": 9
+        },
+        {
+          "file": "file-action",
+          "sec": "methods",
+          "n": 6
+        }
+      ]
+    },
+    {
+      "id": "php-validate",
+      "name": "その場で確かめる",
+      "lang": "php",
+      "kind": "if",
+      "from": "Laravel",
+      "else_name": "文言の並び",
+      "else_tr": "ここから下は、合わなかった時の文言",
+      "slots": [],
+      "open": "$request->validate([",
+      "else": "], [",
+      "close": "]);",
+      "tr": "送られてきた中身が、下の決まりに合うか確かめる。合わなければ元の画面に戻してエラーを出す",
+      "k": [
+        "チェック",
+        "確かめ"
+      ],
+      "sum": "入力をチェックし",
+      "start": [
+        {
+          "tag": "php-rq-rule"
+        }
+      ],
+      "o": 37,
+      "in": [
+        {
+          "file": "file-controller",
+          "sec": "methods",
+          "n": 30
+        },
+        {
+          "file": "file-fortify",
+          "sec": "boot",
+          "n": 3
+        }
+      ]
+    },
+    {
+      "id": "blade-section",
+      "name": "差し込む",
+      "lang": "blade",
+      "kind": "block",
+      "from": "Laravel",
+      "gap": true,
+      "slots": [
+        {
+          "key": "name",
+          "label": "差し込み口",
+          "default": "content"
+        }
+      ],
+      "open": "@section('《name》')",
+      "close": "@endsection",
+      "tr": "外枠の差し込み口 《name》 に、中の行を入れる",
+      "o": 38,
+      "in": [
+        {
+          "file": "file-blade",
+          "sec": "body",
+          "n": 4
+        }
+      ]
+    },
+    {
+      "id": "blade-yield",
+      "name": "差し込み口",
+      "lang": "blade",
+      "kind": "line",
+      "from": "Laravel",
+      "slots": [
+        {
+          "key": "name",
+          "label": "差し込み口の名前",
+          "default": "content"
+        }
+      ],
+      "code": "@yield('《name》')",
+      "tr": "ほかの画面が @section('《name》') で入れた中身を、ここに差し込む",
+      "o": 39,
+      "in": [
+        {
+          "file": "file-blade",
+          "sec": "body",
+          "n": 5
+        }
+      ]
+    },
+    {
+      "id": "blade-if",
+      "name": "もし（画面）",
+      "lang": "blade",
+      "kind": "if",
+      "from": "Laravel",
+      "slots": [
+        {
+          "key": "cond",
+          "label": "条件",
+          "default": "session('message')"
+        }
+      ],
+      "open": "@if(《cond》)",
+      "elif": "@elseif(《cond》)",
+      "elif_name": "そうでなければ、もし",
+      "elif_tr": "そうでなければ、もし 《cond》 なら下を出す",
+      "else": "@else",
+      "close": "@endif",
+      "tr": "もし 《cond》 なら中を出す",
+      "o": 40,
+      "in": [
+        {
+          "file": "file-blade",
+          "sec": "body",
+          "n": 6
+        }
+      ]
+    },
+    {
+      "id": "blade-foreach",
+      "name": "繰り返す（画面）",
+      "lang": "blade",
+      "kind": "block",
+      "from": "Laravel",
+      "slots": [
+        {
+          "key": "list",
+          "label": "並び",
+          "default": "$tasks"
+        },
+        {
+          "key": "item",
+          "label": "1件の変数",
+          "default": "$task",
+          "pattern": "\\$\\w+"
+        }
+      ],
+      "open": "@foreach(《list》 as 《item》)",
+      "close": "@endforeach",
+      "tr": "《list》 から1件ずつ 《item》 に入れて、中を出す",
+      "o": 41,
+      "in": [
+        {
+          "file": "file-blade",
+          "sec": "body",
+          "n": 7
+        }
+      ]
+    },
+    {
+      "id": "blade-error",
+      "name": "欄のエラー",
+      "lang": "blade",
+      "kind": "block",
+      "from": "Laravel",
+      "slots": [
+        {
+          "key": "name",
+          "label": "欄",
+          "default": "content"
+        }
+      ],
+      "open": "@error('《name》')",
+      "close": "@enderror",
+      "tr": "欄 《name》 が決まりに合わなかった時だけ、中を出す",
+      "o": 42,
+      "in": [
+        {
+          "file": "file-blade",
+          "sec": "body",
+          "n": 8
+        }
+      ]
+    },
+    {
+      "id": "blade-csrf",
+      "name": "合言葉",
+      "lang": "blade",
+      "kind": "line",
+      "from": "Laravel",
+      "slots": [],
+      "code": "@csrf",
+      "tr": "フォームに合言葉を入れる。無いと送った時に 419 Page Expired になる",
+      "o": 43,
+      "in": [
+        {
+          "file": "file-blade",
+          "sec": "body",
+          "n": 9
+        }
+      ]
+    },
+    {
+      "id": "blade-method",
+      "name": "送り方を変える",
+      "lang": "blade",
+      "kind": "line",
+      "from": "Laravel",
+      "slots": [
+        {
+          "key": "verb",
+          "label": "送り方",
+          "default": "PUT",
+          "options": [
+            "PUT",
+            "PATCH",
+            "DELETE"
+          ]
+        }
+      ],
+      "code": "@method('《verb》')",
+      "tr": "このフォームを 《verb》 として送る（HTMLのフォームは GET と POST しか送れないため）",
+      "o": 44,
+      "in": [
+        {
+          "file": "file-blade",
+          "sec": "body",
+          "n": 10
+        }
+      ]
+    },
+    {
+      "id": "blade-css",
+      "name": "CSSを読む",
+      "lang": "blade",
+      "kind": "line",
+      "from": "Laravel",
+      "slots": [
+        {
+          "key": "file",
+          "label": "CSSのファイル",
+          "default": "index.css"
+        }
+      ],
+      "code": "<link rel=\"stylesheet\" href=\"{{ asset('css/《file》') }}\">",
+      "tr": "public/css/《file》 のCSSを読み込む",
+      "o": 45,
+      "in": [
+        {
+          "file": "file-blade",
+          "sec": "body",
+          "n": 11
+        }
+      ]
+    },
+    {
+      "id": "blade-echo",
+      "name": "値を出す",
+      "lang": "blade",
+      "kind": "line",
+      "from": "Laravel",
+      "slots": [
+        {
+          "key": "expr",
+          "label": "出す値",
+          "default": "$task->content"
+        }
+      ],
+      "code": "{{ 《expr》 }}",
+      "tr": "《expr》 の値を出す（文字は安全な形に変えて出す）",
+      "o": 46,
+      "in": [
+        {
+          "file": "file-blade",
+          "sec": "body",
+          "n": 12
+        }
+      ]
+    },
+    {
+      "id": "blade-doctype",
+      "name": "HTMLの宣言",
+      "lang": "blade",
+      "kind": "line",
+      "from": "Laravel",
+      "slots": [],
+      "code": "<!DOCTYPE html>",
+      "tr": "このファイルはHTMLだと宣言する",
+      "o": 47,
+      "in": [
+        {
+          "file": "file-blade",
+          "sec": "body",
+          "n": 13
+        }
+      ]
+    },
+    {
+      "id": "blade-input",
+      "name": "入力欄",
+      "lang": "blade",
+      "kind": "line",
+      "from": "Laravel",
+      "slots": [
+        {
+          "key": "attrs",
+          "label": "中身",
+          "default": "type=\"text\" name=\"content\"",
+          "pattern": "(?:[^>\"{\\n]|\"[^\"\\n]*\"|\\{\\{.*?\\}\\})*?"
+        }
+      ],
+      "code": "<input 《attrs》>",
+      "tr": "入力欄を置く（《attrs》）",
+      "o": 48,
+      "in": [
+        {
+          "file": "file-blade",
+          "sec": "body",
+          "n": 14
+        }
+      ]
+    },
+    {
+      "id": "blade-img",
+      "name": "画像",
+      "lang": "blade",
+      "kind": "line",
+      "from": "Laravel",
+      "slots": [
+        {
+          "key": "attrs",
+          "label": "中身",
+          "default": "src=\"\" alt=\"\"",
+          "pattern": "(?:[^>\"{\\n]|\"[^\"\\n]*\"|\\{\\{.*?\\}\\})*?"
+        }
+      ],
+      "code": "<img 《attrs》>",
+      "tr": "画像を出す（《attrs》）",
+      "o": 49,
+      "in": [
+        {
+          "file": "file-blade",
+          "sec": "body",
+          "n": 15
+        }
+      ]
+    },
+    {
+      "id": "blade-void",
+      "name": "設定の要素",
+      "lang": "blade",
+      "kind": "line",
+      "from": "Laravel",
+      "slots": [
+        {
+          "key": "el",
+          "label": "要素",
+          "default": "meta",
+          "pattern": "(?:meta|br|hr|link)"
+        },
+        {
+          "key": "attrs",
+          "label": "中身",
+          "default": "charset=\"UTF-8\"",
+          "pattern": "(?:[^>\"{\\n]|\"[^\"\\n]*\"|\\{\\{.*?\\}\\})*?"
+        }
+      ],
+      "code": "<《el》 《attrs》>",
+      "tr": "設定 《el》 を置く（《attrs》）",
+      "o": 50,
+      "in": [
+        {
+          "file": "file-blade",
+          "sec": "body",
+          "n": 16
+        }
+      ]
+    },
+    {
+      "id": "blade-inline",
+      "name": "1行の要素",
+      "lang": "blade",
+      "kind": "line",
+      "from": "Laravel",
+      "slots": [
+        {
+          "key": "el",
+          "label": "要素",
+          "default": "p",
+          "pattern": "[a-z][\\w-]*"
+        },
+        {
+          "key": "attrs",
+          "label": "中身（空可）",
+          "default": "",
+          "pattern": "(?:[^>\"{\\n]|\"[^\"\\n]*\"|\\{\\{.*?\\}\\})*?"
+        },
+        {
+          "key": "inner",
+          "label": "中の文字",
+          "default": ""
+        }
+      ],
+      "code": [
+        {
+          "if": "attrs",
+          "t": "<《el》 《attrs》>《inner》</《el》>"
+        },
+        {
+          "if": "!attrs",
+          "t": "<《el》>《inner》</《el》>"
+        }
+      ],
+      "tr": [
+        "《el|words:html》「《inner》」を置く",
+        {
+          "if": "attrs",
+          "t": "（《attrs》）"
+        }
+      ],
+      "o": 51,
+      "in": [
+        {
+          "file": "file-blade",
+          "sec": "body",
+          "n": 17
+        }
+      ]
+    },
+    {
+      "id": "blade-open",
+      "name": "要素",
+      "lang": "blade",
+      "kind": "block",
+      "from": "Laravel",
+      "slots": [
+        {
+          "key": "el",
+          "label": "要素",
+          "default": "div",
+          "pattern": "[a-z][\\w-]*"
+        },
+        {
+          "key": "attrs",
+          "label": "中身（空可）",
+          "default": "",
+          "pattern": "(?:[^>\"{\\n]|\"[^\"\\n]*\"|\\{\\{.*?\\}\\})*?"
+        }
+      ],
+      "open": [
+        {
+          "if": "attrs",
+          "t": "<《el》 《attrs》>"
+        },
+        {
+          "if": "!attrs",
+          "t": "<《el》>"
+        }
+      ],
+      "close": "</《el》>",
+      "tr": [
+        "《el|words:html》",
+        {
+          "if": "attrs",
+          "t": "（《attrs》）"
+        }
+      ],
+      "o": 52,
+      "in": [
+        {
+          "file": "file-blade",
+          "sec": "body",
+          "n": 18
+        }
+      ]
+    },
+    {
+      "id": "php-mg-id",
+      "name": "番号のカラム",
+      "lang": "php",
+      "kind": "line",
+      "from": "Laravel",
+      "slots": [],
+      "code": "$table->id();",
+      "tr": "番号のカラム id を作る。1件ごとに1から自動で増える",
+      "o": 54,
+      "in": [
+        {
+          "file": "file-migration",
+          "sec": "cols",
+          "n": 0
+        }
+      ]
+    },
+    {
+      "id": "php-mg-col",
+      "name": "カラム",
+      "lang": "php",
+      "kind": "chain_head",
+      "from": "Laravel",
+      "slots": [
+        {
+          "key": "name",
+          "label": "カラムの名前",
+          "default": "content"
+        },
+        {
+          "key": "type",
+          "label": "種類",
+          "default": "string",
+          "options": [
+            {
+              "v": "string",
+              "label": "短い文字"
+            },
+            {
+              "v": "text",
+              "label": "長い文字"
+            },
+            {
+              "v": "integer",
+              "label": "整数"
+            },
+            {
+              "v": "tinyInteger",
+              "label": "小さい整数"
+            },
+            {
+              "v": "boolean",
+              "label": "はい／いいえ"
+            },
+            {
+              "v": "date",
+              "label": "日付"
+            },
+            {
+              "v": "dateTime",
+              "label": "日時"
+            }
+          ],
+          "pattern": "(?:string|text|integer|tinyInteger|boolean|date|dateTime)"
+        },
+        {
+          "key": "len",
+          "label": "長さ（空なら決めない）",
+          "default": ""
+        }
+      ],
+      "code": [
+        {
+          "if": "len",
+          "t": "$table->《type》('《name》', 《len》)"
+        },
+        {
+          "if": "!len",
+          "t": "$table->《type》('《name》')"
+        }
+      ],
+      "chains": [
+        "php-mg-null",
+        "php-mg-default",
+        "php-mg-uniq",
+        "php-mg-after"
+      ],
+      "tr": [
+        "カラム 《name》 を作る（《type|label》",
+        {
+          "if": "len",
+          "t": "・《len》文字まで"
+        },
+        "）"
+      ],
+      "o": 55,
+      "in": [
+        {
+          "file": "file-migration",
+          "sec": "cols",
+          "n": 1
+        }
+      ]
+    },
+    {
+      "id": "php-mg-fk",
+      "name": "外部キー",
+      "lang": "php",
+      "kind": "chain_head",
+      "from": "Laravel",
+      "slots": [
+        {
+          "key": "name",
+          "label": "カラムの名前",
+          "default": "category_id"
+        },
+        {
+          "key": "null",
+          "label": "空でもいい",
+          "default": "",
+          "options": [
+            {
+              "v": "",
+              "label": "空はだめ"
+            },
+            {
+              "v": "空でもいい",
+              "label": "空でもいい"
+            }
+          ]
+        },
+        {
+          "key": "after",
+          "label": "置く場所（このカラムの後ろ）",
+          "default": ""
+        }
+      ],
+      "code": [
+        {
+          "if": [
+            "!null",
+            "!after"
+          ],
+          "t": "$table->foreignId('《name》')->constrained()"
+        },
+        {
+          "if": [
+            "null=空でもいい",
+            "!after"
+          ],
+          "t": "$table->foreignId('《name》')->nullable()->constrained()"
+        },
+        {
+          "if": [
+            "!null",
+            "after"
+          ],
+          "t": "$table->foreignId('《name》')->after('《after》')->constrained()"
+        },
+        {
+          "if": [
+            "null=空でもいい",
+            "after"
+          ],
+          "t": "$table->foreignId('《name》')->nullable()->after('《after》')->constrained()"
+        }
+      ],
+      "chains": [
+        "php-mg-cascade",
+        "php-mg-null",
+        "php-mg-after"
+      ],
+      "tr": "カラム 《name》 を外部キーにする。テーブル 《name|fk_table》 に実在する番号しか入らない",
+      "absorb": {
+        "php-mg-after": {
+          "from": "col",
+          "to": "after",
+          "note": "->constrained() の後ろの ->after() は置く場所が効かないので、前に置いた形で出す"
+        }
+      },
+      "o": 56,
+      "in": [
+        {
+          "file": "file-migration",
+          "sec": "cols",
+          "n": 2
+        }
+      ]
+    },
+    {
+      "id": "php-mg-ts",
+      "name": "日時のカラム",
+      "lang": "php",
+      "kind": "line",
+      "from": "Laravel",
+      "slots": [],
+      "code": "$table->timestamps();",
+      "tr": "作った日時 created_at と、直した日時 updated_at のカラムを作る",
+      "o": 57,
+      "in": [
+        {
+          "file": "file-migration",
+          "sec": "cols",
+          "n": 3
+        }
+      ]
+    },
+    {
+      "id": "php-mg-unique2",
+      "name": "組で重複禁止",
+      "lang": "php",
+      "kind": "line",
+      "from": "Laravel",
+      "slots": [
+        {
+          "key": "cols",
+          "label": "組にするカラム（,で区切る）",
+          "default": "user_id, todo_id"
+        }
+      ],
+      "code": "$table->unique([《cols|quote_list》]);",
+      "tr": "《cols|join_dot》 の組み合わせが同じ行を、2つ作れないようにする",
+      "o": 58,
+      "in": [
+        {
+          "file": "file-migration",
+          "sec": "cols",
+          "n": 4
+        }
+      ]
+    },
+    {
+      "id": "php-mg-null",
+      "name": "空でもいい",
+      "lang": "php",
+      "kind": "chain",
+      "from": "Laravel",
+      "slots": [],
+      "code": "->nullable()",
+      "tr": "空のままでも保存できる",
+      "o": 59
+    },
+    {
+      "id": "php-mg-default",
+      "name": "最初の値",
+      "lang": "php",
+      "kind": "chain",
+      "from": "Laravel",
+      "slots": [
+        {
+          "key": "v",
+          "label": "最初の値",
+          "default": "0"
+        }
+      ],
+      "code": "->default(《v》)",
+      "tr": "何も入れなければ 《v》 が入る",
+      "o": 60
+    },
+    {
+      "id": "php-mg-uniq",
+      "name": "重複禁止",
+      "lang": "php",
+      "kind": "chain",
+      "from": "Laravel",
+      "slots": [],
+      "code": "->unique()",
+      "tr": "同じ値を2つ入れられない",
+      "o": 61
+    },
+    {
+      "id": "php-mg-after",
+      "name": "置く場所",
+      "lang": "php",
+      "kind": "chain",
+      "from": "Laravel",
+      "slots": [
+        {
+          "key": "col",
+          "label": "このカラムの後ろ",
+          "default": "content"
+        }
+      ],
+      "code": "->after('《col》')",
+      "tr": "カラム 《col》 のすぐ後ろに置く",
+      "o": 62
+    },
+    {
+      "id": "php-mg-cascade",
+      "name": "一緒に消す（CASCADE）",
+      "lang": "php",
+      "kind": "chain",
+      "from": "Laravel",
+      "slots": [],
+      "code": "->cascadeOnDelete()",
+      "reads": [
+        "->onDelete('cascade')"
+      ],
+      "tr": "外部キーの先の行が消えたら、この行も一緒に消える（CASCADE）。付けないと、先の行は消せなくなる",
+      "o": 63
+    },
+    {
+      "id": "php-md-belongs",
+      "name": "親につながる",
+      "lang": "php",
+      "kind": "line",
+      "from": "Laravel",
+      "gap": true,
+      "slots": [
+        {
+          "key": "name",
+          "label": "つながりの名前",
+          "default": "category"
+        },
+        {
+          "key": "model",
+          "label": "つながる先のモデル",
+          "default": "Category"
+        }
+      ],
+      "code": [
+        "public function 《name》(): BelongsTo",
+        "{",
+        "    return $this->belongsTo(《model》::class);",
+        "}"
+      ],
+      "reads": [
+        [
+          "public function 《name》()",
+          "{",
+          "return $this->belongsTo(《model》::class);",
+          "}"
+        ]
+      ],
+      "uses": [
+        "use Illuminate\\Database\\Eloquent\\Relations\\BelongsTo;"
+      ],
+      "tr": "《model》 の1件につながる。->《name》 で、つながる先の1件が取れる",
+      "o": 64,
+      "in": [
+        {
+          "file": "file-model",
+          "sec": "rels",
+          "n": 0
+        }
+      ]
+    },
+    {
+      "id": "php-md-hasmany",
+      "name": "子を持つ",
+      "lang": "php",
+      "kind": "line",
+      "from": "Laravel",
+      "gap": true,
+      "slots": [
+        {
+          "key": "name",
+          "label": "つながりの名前",
+          "default": "todos"
+        },
+        {
+          "key": "model",
+          "label": "子のモデル",
+          "default": "Todo"
+        }
+      ],
+      "code": [
+        "public function 《name》(): HasMany",
+        "{",
+        "    return $this->hasMany(《model》::class);",
+        "}"
+      ],
+      "reads": [
+        [
+          "public function 《name》()",
+          "{",
+          "return $this->hasMany(《model》::class);",
+          "}"
+        ]
+      ],
+      "uses": [
+        "use Illuminate\\Database\\Eloquent\\Relations\\HasMany;"
+      ],
+      "tr": "《model》 をたくさん持つ。->《name》 で、子の一覧が取れる",
+      "o": 65,
+      "in": [
+        {
+          "file": "file-model",
+          "sec": "rels",
+          "n": 1
+        }
+      ]
+    },
+    {
+      "id": "php-md-btm",
+      "name": "中間でつながる",
+      "lang": "php",
+      "kind": "line",
+      "from": "Laravel",
+      "gap": true,
+      "slots": [
+        {
+          "key": "name",
+          "label": "つながりの名前",
+          "default": "likes"
+        },
+        {
+          "key": "model",
+          "label": "相手のモデル",
+          "default": "User"
+        },
+        {
+          "key": "pivot",
+          "label": "中間テーブル",
+          "default": "likes"
+        },
+        {
+          "key": "mine",
+          "label": "自分の番号のカラム",
+          "default": "todo_id"
+        },
+        {
+          "key": "other",
+          "label": "相手の番号のカラム",
+          "default": "user_id"
+        }
+      ],
+      "code": [
+        "public function 《name》(): BelongsToMany",
+        "{",
+        "    return $this->belongsToMany(《model》::class, '《pivot》', '《mine》', '《other》')->withTimestamps();",
+        "}"
+      ],
+      "reads": [
+        [
+          "public function 《name》()",
+          "{",
+          "return $this->belongsToMany(《model》::class, '《pivot》', '《mine》', '《other》')->withTimestamps();",
+          "}"
+        ]
+      ],
+      "uses": [
+        "use Illuminate\\Database\\Eloquent\\Relations\\BelongsToMany;"
+      ],
+      "tr": "中間テーブル 《pivot》 を通して、たくさんの 《model》 とつながる（《mine》 が自分、《other》 が相手の番号）",
+      "o": 66,
+      "in": [
+        {
+          "file": "file-model",
+          "sec": "rels",
+          "n": 2
+        }
+      ]
+    },
+    {
+      "id": "php-md-scope",
+      "name": "自作の絞り込み",
+      "lang": "php",
+      "kind": "line",
+      "from": "自作",
+      "gap": true,
+      "slots": [
+        {
+          "key": "name",
+          "label": "部品の名前",
+          "default": "KeywordSearch"
+        },
+        {
+          "key": "var",
+          "label": "受け取る値",
+          "default": "keyword",
+          "pattern": "\\w+"
+        },
+        {
+          "key": "col",
+          "label": "絞るカラム",
+          "default": "content"
+        },
+        {
+          "key": "op",
+          "label": "比べ方",
+          "default": "含む",
+          "options": [
+            "同じ",
+            "含む"
+          ]
+        }
+      ],
+      "code": [
+        "public function scope《name》(Builder $query, $《var》): void",
+        "{",
+        "    if (! empty($《var》)) {",
+        {
+          "if": "op=同じ",
+          "t": "        $query->where('《col》', $《var》);"
+        },
+        {
+          "if": "op=含む",
+          "t": "        $query->where('《col》', 'like', '%' . $《var》 . '%');"
+        },
+        "    }",
+        "}"
+      ],
+      "reads": [
+        {
+          "set": {
+            "op": "同じ"
+          },
+          "t": [
+            "public function scope《name》($query, $《var》)",
+            "{",
+            "if (! empty($《var》)) {",
+            "$query->where('《col》', $《var》);",
+            "}",
+            "return $query;",
+            "}"
+          ]
+        },
+        {
+          "set": {
+            "op": "含む"
+          },
+          "t": [
+            "public function scope《name》($query, $《var》)",
+            "{",
+            "if (! empty($《var》)) {",
+            "$query->where('《col》', 'like', '%' . $《var》 . '%');",
+            "}",
+            "return $query;",
+            "}"
+          ]
+        },
+        {
+          "set": {
+            "op": "同じ"
+          },
+          "t": [
+            "public function scope《name》($query, $《var》)",
+            "{",
+            "if (! empty($《var》)) {",
+            "$query->where('《col》', $《var》);",
+            "}",
+            "}"
+          ]
+        },
+        {
+          "set": {
+            "op": "含む"
+          },
+          "t": [
+            "public function scope《name》($query, $《var》)",
+            "{",
+            "if (! empty($《var》)) {",
+            "$query->where('《col》', 'like', '%' . $《var》 . '%');",
+            "}",
+            "}"
+          ]
+        }
+      ],
+      "uses": [
+        "use Illuminate\\Database\\Eloquent\\Builder;"
+      ],
+      "tr": [
+        "値 《var》 が空でない時だけ、カラム 《col》 ",
+        {
+          "if": "op=同じ",
+          "t": "が同じもの"
+        },
+        {
+          "if": "op=含む",
+          "t": "に含むもの"
+        },
+        "に絞る部品。コントローラーで ->《name》($《var》) と呼ぶ"
+      ],
+      "o": 67,
+      "in": [
+        {
+          "file": "file-model",
+          "sec": "rels",
+          "n": 3
+        }
+      ]
+    },
+    {
+      "id": "php-rq-rule",
+      "name": "欄の決まり",
+      "lang": "php",
+      "kind": "line",
+      "from": "Laravel",
+      "slots": [
+        {
+          "key": "field",
+          "label": "欄",
+          "default": "content"
+        },
+        {
+          "key": "rules",
+          "label": "決まり（|で区切る）",
+          "default": "required|string|max:20"
+        }
+      ],
+      "code": "'《field》' => [《rules|pipe_list》],",
+      "reads": [
+        "'《field》' => '《rules》',",
+        "'《field》' => [《rules|pipe_list》]"
+      ],
+      "tr": "欄 《field》 は《rules|words:rule》",
+      "o": 68,
+      "in": [
+        {
+          "file": "file-controller",
+          "sec": "methods",
+          "n": 31
+        },
+        {
+          "file": "file-request",
+          "sec": "rules",
+          "n": 0
+        },
+        {
+          "file": "file-fortify",
+          "sec": "boot",
+          "n": 4
+        },
+        {
+          "file": "file-action",
+          "sec": "methods",
+          "n": 2
+        }
+      ]
+    },
+    {
+      "id": "php-rq-msg",
+      "name": "文言",
+      "lang": "php",
+      "kind": "line",
+      "from": "Laravel",
+      "slots": [
+        {
+          "key": "field",
+          "label": "欄",
+          "default": "content"
+        },
+        {
+          "key": "rule",
+          "label": "決まり",
+          "default": "required"
+        },
+        {
+          "key": "text",
+          "label": "出す文言",
+          "default": "入力してください"
+        }
+      ],
+      "code": "'《field》.《rule》' => '《text》',",
+      "tr": "欄 《field》 が「《rule|words:rule》」に合わない時、「《text》」と出す",
+      "o": 69,
+      "in": [
+        {
+          "file": "file-controller",
+          "sec": "methods",
+          "n": 32
+        },
+        {
+          "file": "file-request",
+          "sec": "msgs",
+          "n": 0
+        },
+        {
+          "file": "file-fortify",
+          "sec": "boot",
+          "n": 5
+        },
+        {
+          "file": "file-action",
+          "sec": "methods",
+          "n": 3
+        }
+      ]
+    },
+    {
+      "id": "php-rt-one",
+      "name": "ルート1本",
+      "lang": "php",
+      "kind": "line",
+      "from": "Laravel",
+      "memo": "items",
+      "slots": [
+        {
+          "key": "verb",
+          "label": "送り方（HTTPメソッド）",
+          "default": "get",
+          "options": [
+            {
+              "v": "get",
+              "label": "開く"
+            },
+            {
+              "v": "post",
+              "label": "送って作る"
+            },
+            {
+              "v": "put",
+              "label": "送って全部直す"
+            },
+            {
+              "v": "patch",
+              "label": "送って一部直す"
+            },
+            {
+              "v": "delete",
+              "label": "送って消す"
+            }
+          ]
+        },
+        {
+          "key": "path",
+          "label": "URL",
+          "default": "/tasks"
+        },
+        {
+          "key": "controller",
+          "label": "コントローラー",
+          "default": "TaskController"
+        },
+        {
+          "key": "method",
+          "label": "メソッド",
+          "default": "index"
+        },
+        {
+          "key": "name",
+          "label": "ルートの名前（空可）",
+          "default": ""
+        },
+        {
+          "key": "who",
+          "label": "使える人",
+          "default": "誰でも",
+          "options": [
+            "誰でも",
+            "ログインした人"
+          ]
+        }
+      ],
+      "code": [
+        {
+          "if": "name",
+          "t": "Route::《verb》('《path》', [《controller》::class, '《method》'])->name('《name》');"
+        },
+        {
+          "if": "!name",
+          "t": "Route::《verb》('《path》', [《controller》::class, '《method》']);"
+        }
+      ],
+      "uses": [
+        "use App\\Http\\Controllers\\《controller》;"
+      ],
+      "tr": [
+        "《verb|label》（《verb》）で URL 《path》 に来たら、《controller》 の 《method》 を動かす",
+        {
+          "if": "name",
+          "t": "。ルートの名前は 《name》"
+        },
+        {
+          "if": "path~{",
+          "t": "。URLの 《path|url_args》 の部分は、メソッドが受け取る値（引数）"
+        },
+        {
+          "if": "who=ログインした人",
+          "t": "。ログインした人だけ使える"
+        }
+      ],
+      "o": 70,
+      "in": [
+        {
+          "file": "file-route",
+          "sec": "routes",
+          "n": 0
+        }
+      ]
+    },
+    {
+      "id": "php-rt-view",
+      "name": "画面だけのルート",
+      "lang": "php",
+      "kind": "line",
+      "from": "Laravel",
+      "memo": "items",
+      "slots": [
+        {
+          "key": "path",
+          "label": "URL",
+          "default": "/"
+        },
+        {
+          "key": "view",
+          "label": "画面の名前",
+          "default": "welcome"
+        },
+        {
+          "key": "who",
+          "label": "使える人",
+          "default": "誰でも",
+          "options": [
+            "誰でも",
+            "ログインした人"
+          ]
+        }
+      ],
+      "code": [
+        "Route::get('《path》', function () {",
+        "    return view('《view》');",
+        "});"
+      ],
+      "tr": [
+        "開く（get）で URL 《path》 に来たら、コントローラーを通さずに画面 《view》 をそのまま出す",
+        {
+          "if": "who=ログインした人",
+          "t": "。ログインした人だけ使える"
+        }
+      ],
+      "o": 71,
+      "in": [
+        {
+          "file": "file-route",
+          "sec": "routes",
+          "n": 1
+        }
+      ]
+    },
+    {
+      "id": "php-rt-auth",
+      "name": "ログインした人だけ",
+      "lang": "php",
+      "kind": "block",
+      "from": "Laravel",
+      "slots": [],
+      "open": "Route::middleware('auth')->group(function () {",
+      "close": "});",
+      "reads": [
+        "Route::middleware(['auth'])->group(function () {"
+      ],
+      "tr": "中のルートは、ログインしていない人が来るとログイン画面へ飛ばす",
+      "o": 73,
+      "in": [
+        {
+          "file": "file-route",
+          "sec": "routes",
+          "n": 3
+        }
+      ]
+    },
+    {
+      "id": "php-sd-create",
+      "name": "1件入れる",
+      "lang": "php",
+      "kind": "block",
+      "from": "Laravel",
+      "kv": "php-sd-pair",
+      "slots": [
+        {
+          "key": "model",
+          "label": "モデル",
+          "default": "Category",
+          "pattern": "(?!DB(?![\\w\\\\]))\\\\?(?:[A-Za-z_]\\w*\\\\)*[A-Za-z_]\\w*"
+        }
+      ],
+      "open": "《model》::create([",
+      "close": "]);",
+      "uses": [
+        "use App\\Models\\《model》;"
+      ],
+      "tr": "モデル 《model》 を使って、テーブル 《model|base|table》 に1件（1行）入れる。入れるカラムと値は下のとおり。作った日時・直した日時は自動で入る",
+      "o": 74,
+      "in": [
+        {
+          "file": "file-seeder",
+          "sec": "body",
+          "n": 0
+        }
+      ]
+    },
+    {
+      "id": "php-sd-pair",
+      "name": "カラムと値",
+      "lang": "php",
+      "kind": "line",
+      "from": "Laravel",
+      "memo": "inline",
+      "slots": [
+        {
+          "key": "key",
+          "label": "カラム",
+          "default": "name"
+        },
+        {
+          "key": "val",
+          "label": "値",
+          "default": "'仕事'"
+        }
+      ],
+      "code": "'《key》' => 《val》,",
+      "uses": [
+        {
+          "if": "val~Hash::make",
+          "t": "use Illuminate\\Support\\Facades\\Hash;"
+        }
+      ],
+      "tr": "カラム 《key》 に、値 《val》 を入れる",
+      "o": 75,
+      "in": [
+        {
+          "file": "file-seeder",
+          "sec": "body",
+          "n": 1
+        }
+      ]
+    },
+    {
+      "id": "php-sd-insert",
+      "name": "直接入れる（DBの書き方）",
+      "lang": "php",
+      "kind": "block",
+      "from": "Laravel",
+      "slots": [
+        {
+          "key": "table",
+          "label": "テーブル",
+          "default": "categories"
+        }
+      ],
+      "open": "DB::table('《table》')->insert([",
+      "close": "]);",
+      "uses": [
+        "use Illuminate\\Support\\Facades\\DB;"
+      ],
+      "rewrite": {
+        "to": "php-sd-create",
+        "rows": "php-sd-row",
+        "pairs": "pairs",
+        "kv": "php-sd-pair",
+        "slots": {
+          "model": "《table|model》"
+        },
+        "drop": [
+          "created_at",
+          "updated_at"
+        ],
+        "note": "DB::table の書き方を、Eloquent（モデル）の書き方に直した"
+      },
+      "tr": "テーブル 《table》 に、下の行をそのまま入れる",
+      "o": 76,
+      "in": [
+        {
+          "file": "file-seeder",
+          "sec": "body",
+          "n": 2
+        }
+      ]
+    },
+    {
+      "id": "php-sd-row",
+      "name": "1行",
+      "lang": "php",
+      "kind": "line",
+      "from": "Laravel",
+      "slots": [
+        {
+          "key": "pairs",
+          "label": "カラムと値",
+          "default": "'name' => '仕事'"
+        }
+      ],
+      "code": "[《pairs》],",
+      "tr": "1行：《pairs》",
+      "o": 77,
+      "in": [
+        {
+          "file": "file-seeder",
+          "sec": "body",
+          "n": 3
+        }
+      ]
+    },
+    {
+      "id": "php-sd-call",
+      "name": "ほかを呼ぶ",
+      "lang": "php",
+      "kind": "block",
+      "from": "Laravel",
+      "slots": [],
+      "open": "$this->call([",
+      "close": "]);",
+      "tr": "下の Seeder を順に動かす",
+      "o": 78,
+      "in": [
+        {
+          "file": "file-seeder",
+          "sec": "body",
+          "n": 4
+        }
+      ]
+    },
+    {
+      "id": "php-sd-class",
+      "name": "呼ぶもの",
+      "lang": "php",
+      "kind": "line",
+      "from": "Laravel",
+      "slots": [
+        {
+          "key": "name",
+          "label": "名前",
+          "default": "CategorySeeder"
+        }
+      ],
+      "code": "《name》::class,",
+      "tr": "《name》 を動かす",
+      "o": 79,
+      "in": [
+        {
+          "file": "file-seeder",
+          "sec": "body",
+          "n": 5
+        }
+      ]
+    },
+    {
+      "id": "php-sd-factory",
+      "name": "工場で作る",
+      "lang": "php",
+      "kind": "line",
+      "from": "Laravel",
+      "slots": [
+        {
+          "key": "model",
+          "label": "モデル",
+          "default": "Todo",
+          "pattern": "(?!DB(?![\\w\\\\]))\\\\?(?:[A-Za-z_]\\w*\\\\)*[A-Za-z_]\\w*"
+        },
+        {
+          "key": "n",
+          "label": "件数",
+          "default": "10"
+        }
+      ],
+      "code": "《model》::factory()->count(《n》)->create();",
+      "uses": [
+        "use App\\Models\\《model》;"
+      ],
+      "tr": "工場 《model|base》Factory で 《n》 件作って、テーブル 《model|base|table》 に保存する",
+      "o": 80,
+      "in": [
+        {
+          "file": "file-seeder",
+          "sec": "body",
+          "n": 6
+        }
+      ]
+    },
+    {
+      "id": "php-ft-view",
+      "name": "画面を割り当てる",
+      "lang": "php",
+      "kind": "line",
+      "from": "Laravel",
+      "slots": [
+        {
+          "key": "which",
+          "label": "どの画面",
+          "default": "loginView",
+          "options": [
+            {
+              "v": "loginView",
+              "label": "ログイン画面"
+            },
+            {
+              "v": "registerView",
+              "label": "会員登録画面"
+            }
+          ]
+        },
+        {
+          "key": "view",
+          "label": "画面の名前",
+          "default": "auth.login"
+        }
+      ],
+      "code": [
+        "Fortify::《which》(function () {",
+        "    return view('《view》');",
+        "});"
+      ],
+      "tr": "《which|label》には、画面 《view》 を出す",
+      "o": 81,
+      "in": [
+        {
+          "file": "file-fortify",
+          "sec": "boot",
+          "n": 0
+        }
+      ]
+    },
+    {
+      "id": "php-ft-create",
+      "name": "会員登録の処理",
+      "lang": "php",
+      "kind": "line",
+      "from": "Laravel",
+      "slots": [
+        {
+          "key": "cls",
+          "label": "処理のクラス",
+          "default": "CreateNewUser"
+        }
+      ],
+      "code": "Fortify::createUsersUsing(《cls》::class);",
+      "uses": [
+        "use App\\Actions\\Fortify\\《cls》;"
+      ],
+      "tr": "会員登録は、app/Actions/Fortify/《cls》.php の中身で行う",
+      "o": 82,
+      "in": [
+        {
+          "file": "file-fortify",
+          "sec": "boot",
+          "n": 1
+        }
+      ]
+    },
+    {
+      "id": "php-ft-auth",
+      "name": "ログインの確かめ方",
+      "lang": "php",
+      "kind": "block",
+      "from": "Laravel",
+      "slots": [],
+      "open": "Fortify::authenticateUsing(function (Request $request) {",
+      "close": "});",
+      "uses": [
+        "use Illuminate\\Http\\Request;"
+      ],
+      "tr": "ログインの時、下の処理で本人かどうかを確かめる。人を返せばログイン成功",
+      "o": 84,
+      "in": [
+        {
+          "file": "file-fortify",
+          "sec": "boot",
+          "n": 2
+        }
+      ]
+    },
+    {
+      "id": "php-when",
+      "name": "条件付き",
+      "lang": "php",
+      "kind": "chain_block",
+      "from": "Laravel",
+      "slots": [
+        {
+          "key": "cond",
+          "label": "条件",
+          "default": "$keyword"
+        },
+        {
+          "key": "pass",
+          "label": "中に渡す値（空可）",
+          "default": ""
+        }
+      ],
+      "open": [
+        {
+          "if": "pass",
+          "t": "->when(《cond》, function ($q, 《pass》) {"
+        },
+        {
+          "if": "!pass",
+          "t": "->when(《cond》, function ($q) {"
+        }
+      ],
+      "close": "})",
+      "inner": [
+        "php-q-where",
+        "php-q-wherehas"
+      ],
+      "tr": "《cond》 が成り立つ時だけ、中の条件を足す",
+      "sum": "条件で絞り込んで",
+      "point": "when()：条件が成り立たない時は、中の条件は足されない",
+      "cond_note": true,
+      "o": 85
+    },
+    {
+      "id": "php-q-where",
+      "name": "絞り込む",
+      "lang": "php",
+      "kind": "line",
+      "from": "Laravel",
+      "slots": [
+        {
+          "key": "col",
+          "label": "カラム",
+          "default": "title"
+        },
+        {
+          "key": "op",
+          "label": "比べ方",
+          "default": "含む",
+          "options": [
+            "同じ",
+            "違う",
+            "含む"
+          ]
+        },
+        {
+          "key": "val",
+          "label": "値",
+          "default": "$keyword"
+        }
+      ],
+      "code": [
+        {
+          "if": "op=同じ",
+          "t": "$q->where('《col》', 《val》);"
+        },
+        {
+          "if": "op=違う",
+          "t": "$q->where('《col》', '!=', 《val》);"
+        },
+        {
+          "if": "op=含む",
+          "t": "$q->where('《col》', 'like', '%' . 《val》 . '%');"
+        }
+      ],
+      "tr": [
+        "カラム 《col》 が 《val》 ",
+        {
+          "if": "op=同じ",
+          "t": "と同じ"
+        },
+        {
+          "if": "op=違う",
+          "t": "と違う"
+        },
+        {
+          "if": "op=含む",
+          "t": "を含む"
+        },
+        "ものに絞る"
+      ],
+      "sum": "条件で絞り込んで",
+      "point": "重ねた条件は、すべて同時に満たすものだけが残る（AND）",
+      "o": 86
+    },
+    {
+      "id": "php-q-wherehas",
+      "name": "関係で絞る",
+      "lang": "php",
+      "kind": "block",
+      "from": "Laravel",
+      "slots": [
+        {
+          "key": "rel",
+          "label": "つながり",
+          "default": "likes"
+        }
+      ],
+      "open": "$q->whereHas('《rel》', function ($q) {",
+      "close": "});",
+      "inner": [
+        "php-q-where",
+        "php-q-wherehas"
+      ],
+      "tr": "つながり 《rel》 の中に、条件に合うものがあるものだけに絞る",
+      "o": 87
+    },
+    {
+      "id": "php-use",
+      "name": "use の行",
+      "lang": "php",
+      "kind": "line",
+      "from": "PHP",
+      "slots": [
+        {
+          "key": "cls",
+          "label": "クラス（住所付き）",
+          "default": "App\\Models\\User",
+          "pattern": "[\\w\\\\]+(?:\\s+as\\s+\\w+)?"
+        }
+      ],
+      "code": [],
+      "show": "use 《cls》;",
+      "uses": [
+        "use 《cls》;"
+      ],
+      "tr": "クラス 《cls|base》 を、このファイルの中で短い名前で使えるようにする",
+      "o": 88
+    },
+    {
+      "id": "php-validator",
+      "name": "その場で確かめる（Validator）",
+      "lang": "php",
+      "kind": "if",
+      "from": "Laravel",
+      "slots": [
+        {
+          "key": "data",
+          "label": "確かめる中身",
+          "default": "$input"
+        }
+      ],
+      "open": "Validator::make(《data》, [",
+      "else": "], [",
+      "close": "])->validate();",
+      "else_name": "文言の並び（Validator）",
+      "else_tr": "ここから下は、合わなかった時の文言",
+      "uses": [
+        "use Illuminate\\Support\\Facades\\Validator;"
+      ],
+      "tr": "《data》 が下の決まりに合うか確かめる。合わなければ止めて、元の画面にエラーを出す",
+      "start": [
+        {
+          "tag": "php-rq-rule"
+        }
+      ],
+      "o": 89,
+      "in": [
+        {
+          "file": "file-controller",
+          "sec": "methods",
+          "n": 35
+        },
+        {
+          "file": "file-action",
+          "sec": "methods",
+          "n": 1
+        }
+      ]
+    },
+    {
+      "id": "php-md-scope-cond",
+      "name": "自作の絞り込み（条件を書く）",
+      "lang": "php",
+      "kind": "line",
+      "from": "自作",
+      "slots": [
+        {
+          "key": "name",
+          "label": "部品の名前",
+          "default": "StatusSearch"
+        },
+        {
+          "key": "var",
+          "label": "受け取る値",
+          "default": "status",
+          "pattern": "\\w+"
+        },
+        {
+          "key": "cond",
+          "label": "条件",
+          "default": "$status !== null && $status !== ''"
+        },
+        {
+          "key": "col",
+          "label": "絞るカラム",
+          "default": "status"
+        }
+      ],
+      "gap": true,
+      "code": [
+        "public function scope《name》(Builder $query, $《var》): void",
+        "{",
+        "    if (《cond》) {",
+        "        $query->where('《col》', $《var》);",
+        "    }",
+        "}"
+      ],
+      "reads": [
+        {
+          "t": [
+            "public function scope《name》($query, $《var》)",
+            "{",
+            "if (《cond》) {",
+            "$query->where('《col》', $《var》);",
+            "}",
+            "return $query;",
+            "}"
+          ]
+        },
+        {
+          "t": [
+            "public function scope《name》(Builder $query, $《var》): void",
+            "{",
+            "if (《cond》) {",
+            "$query->where('《col》', $《var》);",
+            "}",
+            "}"
+          ]
+        }
+      ],
+      "uses": [
+        "use Illuminate\\Database\\Eloquent\\Builder;"
+      ],
+      "tr": "条件 《cond》 の時だけ、カラム 《col》 が 《var》 と同じものに絞る部品。コントローラーで ->《name|lcfirst》($《var》) と呼ぶ",
+      "o": 92,
+      "in": [
+        {
+          "file": "file-model",
+          "sec": "rels",
+          "n": 4
+        }
+      ]
+    },
+    {
+      "id": "php-md-casts",
+      "name": "値の形の取り決め",
+      "lang": "php",
+      "kind": "block",
+      "from": "Laravel",
+      "slots": [],
+      "kv": "php-pair",
+      "gap": true,
+      "open": [
+        "protected function casts(): array",
+        "{",
+        "    return ["
+      ],
+      "close": [
+        "    ];",
+        "}"
+      ],
+      "reads": [
+        "protected $casts = ["
+      ],
+      "note": "Laravel 8 の書き方（protected $casts）は、13では casts() のメソッドになる",
+      "tr": "カラムの値を、下の形に変えて出し入れする（例：password を hashed にすると、保存の時に暗号の形にする）",
+      "o": 93,
+      "in": [
+        {
+          "file": "file-model",
+          "sec": "rels",
+          "n": 5
+        }
+      ]
+    },
+    {
+      "id": "css-rule",
+      "name": "見た目の決まり",
+      "lang": "css",
+      "kind": "block",
+      "from": "CSS",
+      "slots": [
+        {
+          "key": "sel",
+          "label": "当てる所（セレクター）",
+          "default": ".header",
+          "pattern": "[^\\s{};@][^{};]*?"
+        }
+      ],
+      "gap": true,
+      "open": "《sel》 {",
+      "close": "}",
+      "tr": "《sel》 に当てる見た目",
+      "o": 102,
+      "in": [
+        {
+          "file": "file-css",
+          "sec": "rules",
+          "n": 0
+        }
+      ]
+    },
+    {
+      "id": "css-media",
+      "name": "画面の幅で分ける",
+      "lang": "css",
+      "kind": "block",
+      "from": "CSS",
+      "slots": [
+        {
+          "key": "cond",
+          "label": "条件",
+          "default": "(max-width: 768px)",
+          "pattern": "[^{};\\n]+?"
+        }
+      ],
+      "gap": true,
+      "open": "@media 《cond》 {",
+      "close": "}",
+      "tr": "画面が 《cond》 の時だけ、中の見た目を使う",
+      "o": 103,
+      "in": [
+        {
+          "file": "file-css",
+          "sec": "rules",
+          "n": 1
+        }
+      ]
+    },
+    {
+      "id": "css-prop",
+      "name": "見た目",
+      "lang": "css",
+      "kind": "line",
+      "from": "CSS",
+      "slots": [
+        {
+          "key": "p",
+          "label": "何を",
+          "default": "color",
+          "pattern": "-{0,2}[a-zA-Z][\\w-]*"
+        },
+        {
+          "key": "v",
+          "label": "どうする",
+          "default": "#000",
+          "pattern": "[^;{}\\n]+?"
+        }
+      ],
+      "code": "《p》: 《v》;",
+      "tr": "《p|words:css》を 《v》 にする",
+      "o": 104,
+      "in": [
+        {
+          "file": "file-css",
+          "sec": "rules",
+          "n": 2
+        }
+      ]
+    },
+    {
+      "id": "blade-form",
+      "name": "フォーム",
+      "lang": "blade",
+      "kind": "block",
+      "from": "画面",
+      "slots": [
+        {
+          "key": "cls",
+          "label": "class",
+          "default": "create-form",
+          "pattern": "[\\w-]+"
+        },
+        {
+          "key": "action",
+          "label": "送り先のURL",
+          "default": "/",
+          "pattern": "[^\"\\n]*"
+        },
+        {
+          "key": "method",
+          "label": "送り方",
+          "default": "POST",
+          "pattern": "[GgPp][EeOo][TtSs][Tt]?"
+        },
+        {
+          "key": "file",
+          "label": "ファイルを送る",
+          "default": "",
+          "options": [
+            {
+              "v": "",
+              "label": "送らない"
+            },
+            {
+              "v": "送る",
+              "label": "送る"
+            }
+          ]
+        },
+        {
+          "key": "look",
+          "label": "並べ方",
+          "default": "form-row",
+          "options": [
+            {
+              "v": "form-row",
+              "label": "横に並べる"
+            },
+            {
+              "v": "form-col",
+              "label": "縦に並べる"
+            },
+            {
+              "v": "form-inline",
+              "label": "表の中の1行"
+            }
+          ]
+        }
+      ],
+      "open": [
+        {
+          "if": "!file",
+          "t": "<form class=\"《cls》\" action=\"《action》\" method=\"《method》\">"
+        },
+        {
+          "if": "file=送る",
+          "t": "<form class=\"《cls》\" action=\"《action》\" method=\"《method》\" enctype=\"multipart/form-data\">"
+        }
+      ],
+      "close": "</form>",
+      "looks": {
+        "《cls》": "《look》"
+      },
+      "tr": [
+        "ボタンを押すと、欄の中身を URL 《action》 に送る（送り方 《method》）",
+        {
+          "if": "file=送る",
+          "t": "。ファイルも一緒に送る"
+        }
+      ],
+      "o": 106,
+      "in": [
+        {
+          "file": "file-blade",
+          "sec": "body",
+          "n": 2
+        }
+      ]
+    },
+    {
+      "id": "blade-table",
+      "name": "一覧の表",
+      "lang": "blade",
+      "kind": "block",
+      "from": "画面",
+      "slots": [
+        {
+          "key": "cls",
+          "label": "class",
+          "default": "list-table__inner",
+          "pattern": "[\\w-]+"
+        }
+      ],
+      "open": "<table class=\"《cls》\">",
+      "close": "</table>",
+      "looks": {
+        "《cls》": "table"
+      },
+      "tr": "一覧の表",
+      "o": 107,
+      "in": [
+        {
+          "file": "file-blade",
+          "sec": "body",
+          "n": 3
+        }
+      ]
+    }
+  ],
+  "parts": [
+    {
+      "id": "blade-old",
+      "lang": "blade",
+      "pattern": "old('《name》')",
+      "meaning": "前に送った 《name》 の入力を、欄に残して出す",
+      "o": 0
+    },
+    {
+      "id": "blade-asset",
+      "lang": "blade",
+      "pattern": "asset('《path》')",
+      "meaning": "public/《path》 のファイルのURLを作る",
+      "o": 1
+    },
+    {
+      "id": "blade-session",
+      "lang": "blade",
+      "pattern": "session('《key》')",
+      "meaning": "移動する時に with で入れた知らせ 《key》 の中身",
+      "o": 2
+    },
+    {
+      "id": "blade-errors-any",
+      "lang": "blade",
+      "pattern": "$errors->any()",
+      "meaning": "決まりに合わない欄が1つでもあるか",
+      "o": 3
+    },
+    {
+      "id": "blade-errors-all",
+      "lang": "blade",
+      "pattern": "$errors->all()",
+      "meaning": "エラーの文言を全部",
+      "o": 4
+    },
+    {
+      "id": "blade-message",
+      "lang": "blade",
+      "pattern": "{{ $message }}",
+      "meaning": "その欄のエラーの文言（@error の中だけで使える）",
+      "o": 5
+    },
+    {
+      "id": "blade-enctype",
+      "lang": "blade",
+      "pattern": "enctype=\"multipart/form-data\"",
+      "meaning": "ファイルを送れるフォームにする",
+      "o": 6
+    },
+    {
+      "id": "blade-action",
+      "lang": "blade",
+      "pattern": "action=\"《url》\"",
+      "meaning": "送り先は 《url》",
+      "o": 7
+    },
+    {
+      "id": "blade-method-attr",
+      "lang": "blade",
+      "pattern": "method=\"《m》\"",
+      "meaning": "《m》 で送る",
+      "o": 8
+    },
+    {
+      "id": "blade-hidden",
+      "lang": "blade",
+      "pattern": "type=\"hidden\"",
+      "meaning": "画面には見せずに、値だけ送る",
+      "o": 9
+    },
+    {
+      "id": "php-auth-id",
+      "pattern": "auth()->id()",
+      "meaning": "ログイン中の人の番号",
+      "o": 10
+    },
+    {
+      "id": "php-count",
+      "pattern": "->count()",
+      "meaning": "件数",
+      "o": 11
+    },
+    {
+      "id": "php-contains",
+      "pattern": "->contains('《col》', 《val》)",
+      "meaning": "《col》 が 《val》 のものが入っているか",
+      "o": 12
+    },
+    {
+      "id": "php-hash-check",
+      "pattern": "Hash::check(《a》, 《b》)",
+      "meaning": "《a》 が、保存してある 《b》（暗号の形）と合っているか",
+      "o": 13
+    },
+    {
+      "id": "php-realtext",
+      "pattern": "realText(《n》)",
+      "meaning": "《n》文字くらいの、でたらめな文章",
+      "o": 14
+    },
+    {
+      "id": "php-random",
+      "pattern": "::inRandomOrder()->first()->id",
+      "meaning": "でたらめに1件選んだ、その番号",
+      "o": 15
+    },
+    {
+      "id": "php-now",
+      "pattern": "now()",
+      "meaning": "今の日時",
+      "o": 16
+    },
+    {
+      "id": "php-hash-make",
+      "pattern": "Hash::make(《v》)",
+      "meaning": "《v》 を、元に戻せない暗号の形に変える（パスワードはこの形で保存する）",
+      "o": 17
+    },
+    {
+      "id": "php-view",
+      "pattern": "view('《v》'",
+      "show": "view('《v》')",
+      "only": "line",
+      "meaning": "画面のファイル resources/views/《v|path》.blade.php を使う",
+      "o": 18
+    },
+    {
+      "id": "php-compact",
+      "pattern": "compact(《vars》)",
+      "only": "line",
+      "meaning": "同じ名前の変数を、名前付きでひとまとめにする",
+      "o": 19
+    },
+    {
+      "id": "php-return",
+      "pattern": "return ",
+      "show": "return",
+      "only": "line",
+      "meaning": "この処理の結果として返す（ここで処理が終わる）",
+      "o": 20
+    }
+  ],
+  "words": {
+    "rule": {
+      "required": "必須",
+      "string": "文字",
+      "max": "《arg》文字まで",
+      "email": "メールの形",
+      "numeric": "数字だけ",
+      "digits_between": "桁数が《arg》の間",
+      "unique": "テーブル 《arg》 の中で重複禁止",
+      "nullable": "空でもいい",
+      "integer": "整数",
+      "*": "《name》"
+    },
+    "method": {
+      "index": "一覧ページを開いた時",
+      "create": "作る画面を開いた時",
+      "store": "作る内容を送った時",
+      "show": "詳しいページを開いた時",
+      "edit": "直す画面を開いた時",
+      "update": "直した内容を送った時",
+      "destroy": "消すを送った時",
+      "*": "《name》 が呼ばれた時"
+    },
+    "html": {
+      "div": "まとまり",
+      "p": "文",
+      "h1": "大見出し",
+      "h2": "見出し",
+      "h3": "小見出し",
+      "form": "フォーム",
+      "table": "表",
+      "tr": "表の行",
+      "td": "表のマス",
+      "th": "表の見出しマス",
+      "ul": "並び",
+      "li": "並びの1つ",
+      "label": "欄の名前",
+      "select": "選ぶ欄",
+      "option": "選ぶ欄の1つ",
+      "button": "ボタン",
+      "a": "リンク",
+      "header": "上の帯",
+      "main": "本文",
+      "html": "ページ全体",
+      "head": "ページの設定",
+      "body": "ページの本体",
+      "title": "タブの名前",
+      "textarea": "長い文の欄",
+      "span": "文字のまとまり",
+      "*": "要素 《name》"
+    },
+    "args": {
+      "Request $request": "送られてきた中身",
+      "《名前》Request $request": "送られてきた中身（メソッドが動く前に、決まり 《名前》Request に合うか確かめ済み）",
+      "《大文字で始まる名前》 $《変数》": "URLの番号から取り出した 《大文字で始まる名前》 の1件（変数 《変数》）",
+      "*": ""
+    },
+    "css": {
+      "color": "文字の色",
+      "background-color": "背景の色",
+      "background": "背景",
+      "padding": "内側の余白",
+      "padding-bottom": "下の内側の余白",
+      "padding-top": "上の内側の余白",
+      "margin": "外側の余白",
+      "margin-bottom": "下の外側の余白",
+      "margin-top": "上の外側の余白",
+      "font-size": "文字の大きさ",
+      "font-weight": "文字の太さ",
+      "font-family": "書体",
+      "border": "まわりの線",
+      "border-bottom": "下の線",
+      "border-color": "線の色",
+      "border-radius": "角の丸み",
+      "border-collapse": "表の線のまとめ方",
+      "border-left": "左の線",
+      "width": "幅",
+      "max-width": "一番広い時の幅",
+      "min-width": "一番狭い時の幅",
+      "height": "高さ",
+      "min-height": "一番低い時の高さ",
+      "display": "並べ方",
+      "flex": "広がり方",
+      "flex-direction": "並べる向き",
+      "flex-wrap": "折り返し",
+      "justify-content": "横の寄せ方",
+      "align-items": "縦の寄せ方",
+      "gap": "間の空き",
+      "text-align": "文字の寄せ方",
+      "text-decoration": "下線",
+      "letter-spacing": "文字の間",
+      "cursor": "指の形",
+      "box-shadow": "影",
+      "white-space": "折り返し方",
+      "resize": "大きさの変え方",
+      "outline": "選んだ時の枠線",
+      "transition": "変わる速さ",
+      "box-sizing": "大きさの測り方",
+      "opacity": "透け具合",
+      "list-style": "行頭の印",
+      "vertical-align": "縦の位置",
+      "object-fit": "画像の収め方",
+      "*": "《name》"
+    }
+  },
+  "laravel_names": [
+    "join",
+    "distinct",
+    "count",
+    "pluck",
+    "map",
+    "exists",
+    "whereIn",
+    "orderByDesc",
+    "withCount",
+    "latest",
+    "paginate",
+    "load",
+    "firstOrFail"
+  ],
+  "name_guess": [
+    {
+      "tag": "php-create",
+      "method": "store"
+    },
+    {
+      "tag": "php-update",
+      "method": "update"
+    },
+    {
+      "tag": "php-delete",
+      "method": "destroy"
+    },
+    {
+      "tag": "php-find",
+      "method": "show"
+    },
+    {
+      "tag": "*",
+      "method": "index"
+    }
+  ],
+  "arg_guess": [
+    {
+      "tags": [
+        "php-request-get",
+        "php-validate",
+        "php-create",
+        "php-update"
+      ],
+      "arg": "Request $request"
+    },
+    {
+      "tags": [
+        "php-find"
+      ],
+      "arg": "$id"
+    }
+  ]
+}

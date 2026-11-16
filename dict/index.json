@@ -1,0 +1,13 @@
+{
+  "format": 2,
+  "tech": [
+    "tech/base.json",
+    "tech/laravel.json",
+    "tech/blade.json",
+    "tech/css.json",
+    "tech/app04-translate.json"
+  ],
+  "content": [
+    "content/app04-translate.json"
+  ]
+}
