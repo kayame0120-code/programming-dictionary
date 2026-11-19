@@ -1,0 +1,61 @@
+{
+  "format": 2,
+  "layer": "content",
+  "tech": "laravel",
+  "label": "app02×翻訳",
+  "note": "app02（TODO・Laravel 8）の自作ファイル9本のうち、app04 までの辞書で読めなかった分だけを足す札・言い換え",
+  "tags": [
+    {
+      "id": "php-update-arr",
+      "name": "直す（カラムごと）",
+      "lang": "php",
+      "kind": "block",
+      "from": "Laravel",
+      "slots": [
+        {
+          "key": "var",
+          "label": "直す変数",
+          "default": "task",
+          "pattern": "\\w+"
+        }
+      ],
+      "open": "$《var》->update([",
+      "close": "]);",
+      "tr": "変数 《var》 の1件を、下のカラムと値で書き換えて、テーブルに保存する",
+      "in": [
+        {
+          "file": "file-controller",
+          "sec": "methods"
+        }
+      ]
+    },
+    {
+      "id": "blade-text",
+      "name": "文字だけの行",
+      "lang": "blade",
+      "kind": "line",
+      "from": "画面",
+      "slots": [
+        {
+          "key": "text",
+          "label": "文字",
+          "default": "TODOリスト",
+          "pattern": "(?=[^\\n]*[^\\x00-\\x7F])[^<>{}@$;=()\\s](?:[^<>{}@$;=()\\n]*[^<>{}@$;=()\\s])?"
+        }
+      ],
+      "code": "《text》",
+      "tr": "文字「《text》」を、そのまま画面に出す",
+      "in": [
+        {
+          "file": "file-blade",
+          "sec": "body"
+        }
+      ]
+    }
+  ],
+  "words": {
+    "css": {
+      "line-height": "行の高さ"
+    }
+  }
+}
