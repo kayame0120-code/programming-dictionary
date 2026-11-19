@@ -5,9 +5,12 @@
     "tech/laravel.json",
     "tech/blade.json",
     "tech/css.json",
-    "tech/app04-translate.json"
+    "tech/cmd.json",
+    "tech/app04-translate.json",
+    "tech/app04-feature.json"
   ],
   "content": [
-    "content/app04-translate.json"
+    "content/app04-translate.json",
+    "content/app04-feature.json"
   ]
 }

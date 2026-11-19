@@ -9,7 +9,7 @@
     "lines_file": "file-blade",
     "front": true,
     "family": "laravel",
-    "looks": "@(extends|section|if|foreach|csrf|error|yield)\\b|\\{\\{|^\\s*<[a-z!]"
+    "looks": "@(extends|section|endsection|yield|if|elseif|else|endif|foreach|endforeach|csrf|method|error|enderror)\\b|\\{\\{|^\\s*<[a-z!/]"
   },
   "langs": {
     "blade": "Blade"
@@ -39,7 +39,9 @@
       ],
       "self_close": "/>",
       "code_marks": [
-        "[<>]"
+        "[<>]",
+        "^\\s*@[a-z]+\\b",
+        "\\{\\{"
       ],
       "css": {
         "form": "file",

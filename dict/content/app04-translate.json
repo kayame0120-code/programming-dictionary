@@ -3,7 +3,7 @@
   "layer": "content",
   "tech": "laravel",
   "label": "app04×翻訳",
-  "note": "app04（カテゴリ付きTODO）の自作ファイル30本を読むのに要る札。言葉は凍結モックの札から取った",
+  "note": "app04（カテゴリ付きTODO・Laravel 8）の自作ファイル30本を読むのに要る札・部品の意味・言い換え。訳は Laravel 13 の形に合わせ、Laravel 8 だけの書き方は読むだけの書き方（reads）で読む",
   "tags": [
     {
       "id": "php-method",
@@ -68,7 +68,55 @@
           "file": "file-controller",
           "sec": "methods",
           "n": 0
+        }
+      ]
+    },
+    {
+      "id": "php-act-method",
+      "name": "メソッド（Fortify から呼ばれる）",
+      "lang": "php",
+      "kind": "block",
+      "from": "Laravel",
+      "gap": true,
+      "slots": [
+        {
+          "key": "name",
+          "label": "名前",
+          "default": "index"
         },
+        {
+          "key": "arg",
+          "label": "受け取るもの",
+          "default": ""
+        },
+        {
+          "key": "ret",
+          "label": "返す型（空可）",
+          "default": ""
+        }
+      ],
+      "open": [
+        {
+          "if": "ret",
+          "t": "public function 《name》(《arg》): 《ret》"
+        },
+        {
+          "if": "!ret",
+          "t": "public function 《name》(《arg》)"
+        },
+        "{"
+      ],
+      "close": "}",
+      "uses": [],
+      "tr": [
+        "Fortify から呼ばれて動く処理 《name》（CreateNewUser の create は、会員登録の内容が送られた時に呼ばれる）",
+        {
+          "if": "arg",
+          "t": "。受け取るもの：《arg》"
+        }
+      ],
+      "o": 0,
+      "in": [
         {
           "file": "file-action",
           "sec": "methods",
@@ -228,18 +276,114 @@
         }
       ],
       "code": "$《var》 = 《model》::query()",
-      "reads": [
-        "$《var》 = 《model》::"
-      ],
       "chains": [
         "php-with",
-        "php-when",
         "php-where",
-        "php-order",
         "php-get",
         "php-scope-call"
       ],
       "tr": "テーブル 《model|base|table》 から取り出す準備をする。下の条件を重ねて、結果を変数 《var》 に入れる",
+      "sum": "取り出し",
+      "o": 9,
+      "in": [
+        {
+          "file": "file-controller",
+          "sec": "methods",
+          "n": 9
+        },
+        {
+          "file": "file-fortify",
+          "sec": "boot",
+          "n": 7
+        }
+      ]
+    },
+    {
+      "id": "php-query-with",
+      "name": "取り出し始め（つながりも取る）",
+      "lang": "php",
+      "kind": "chain_head",
+      "from": "Laravel",
+      "slots": [
+        {
+          "key": "var",
+          "label": "入れる変数",
+          "default": "memos",
+          "pattern": "\\w+"
+        },
+        {
+          "key": "model",
+          "label": "モデル",
+          "default": "Memo",
+          "pattern": "(?!DB(?![\\w\\\\]))\\\\?(?:[A-Za-z_]\\w*\\\\)*[A-Za-z_]\\w*"
+        },
+        {
+          "key": "rels",
+          "label": "つながり（,で区切る）",
+          "default": "user"
+        }
+      ],
+      "code": "$《var》 = 《model》::with(《rels|quote_list》)",
+      "chains": [
+        "php-where",
+        "php-get",
+        "php-scope-call"
+      ],
+      "tr": "テーブル 《model|base|table》 から取り出す準備をする。つながり 《rels|join_dot》 の中身も一度に取っておく。下の条件を重ねて、結果を変数 《var》 に入れる",
+      "sum": "取り出し",
+      "o": 9,
+      "in": [
+        {
+          "file": "file-controller",
+          "sec": "methods",
+          "n": 9
+        },
+        {
+          "file": "file-fortify",
+          "sec": "boot",
+          "n": 7
+        }
+      ],
+      "point": "with()：先にまとめて取る。無いと、画面で1件ごとに問い合わせが走る（N+1問題）"
+    },
+    {
+      "id": "php-query-where",
+      "name": "取り出し始め（絞って）",
+      "lang": "php",
+      "kind": "chain_head",
+      "from": "Laravel",
+      "slots": [
+        {
+          "key": "var",
+          "label": "入れる変数",
+          "default": "memos",
+          "pattern": "\\w+"
+        },
+        {
+          "key": "model",
+          "label": "モデル",
+          "default": "Memo",
+          "pattern": "(?!DB(?![\\w\\\\]))\\\\?(?:[A-Za-z_]\\w*\\\\)*[A-Za-z_]\\w*"
+        },
+        {
+          "key": "col",
+          "label": "カラム",
+          "default": "email"
+        },
+        {
+          "key": "val",
+          "label": "値",
+          "default": "$request->email"
+        }
+      ],
+      "code": "$《var》 = 《model》::where('《col》', 《val》)",
+      "chains": [
+        "php-where",
+        "php-with",
+        "php-get",
+        "php-scope-call"
+      ],
+      "tr": "テーブル 《model|base|table》 から、カラム 《col》 が 《val》 と同じものを取り出す準備をする。下の条件を重ねて、結果を変数 《var》 に入れる",
       "sum": "取り出し",
       "o": 9,
       "in": [
@@ -340,41 +484,6 @@
       "sum": "条件で絞り込んで",
       "point": "重ねた条件は、すべて同時に満たすものだけが残る（AND）",
       "o": 11
-    },
-    {
-      "id": "php-order",
-      "name": "並べる",
-      "lang": "php",
-      "kind": "chain",
-      "from": "Laravel",
-      "slots": [
-        {
-          "key": "col",
-          "label": "カラム",
-          "default": "sort_order"
-        },
-        {
-          "key": "dir",
-          "label": "向き",
-          "default": "小さい順",
-          "options": [
-            "小さい順",
-            "大きい順"
-          ]
-        }
-      ],
-      "code": [
-        {
-          "if": "dir=小さい順",
-          "t": "->orderBy('《col》')"
-        },
-        {
-          "if": "dir=大きい順",
-          "t": "->orderBy('《col》', 'desc')"
-        }
-      ],
-      "tr": "カラム 《col》 の《dir》に並べる",
-      "o": 12
     },
     {
       "id": "php-scope-call",
@@ -1471,6 +1580,11 @@
           "file": "file-migration",
           "sec": "cols",
           "n": 0
+        },
+        {
+          "file": "file-controller",
+          "sec": "methods",
+          "n": 60
         }
       ]
     },
@@ -1558,6 +1672,11 @@
           "file": "file-migration",
           "sec": "cols",
           "n": 1
+        },
+        {
+          "file": "file-controller",
+          "sec": "methods",
+          "n": 61
         }
       ]
     },
@@ -1643,6 +1762,11 @@
           "file": "file-migration",
           "sec": "cols",
           "n": 2
+        },
+        {
+          "file": "file-controller",
+          "sec": "methods",
+          "n": 62
         }
       ]
     },
@@ -1661,6 +1785,11 @@
           "file": "file-migration",
           "sec": "cols",
           "n": 3
+        },
+        {
+          "file": "file-controller",
+          "sec": "methods",
+          "n": 63
         }
       ]
     },
@@ -1685,6 +1814,11 @@
           "file": "file-migration",
           "sec": "cols",
           "n": 4
+        },
+        {
+          "file": "file-controller",
+          "sec": "methods",
+          "n": 64
         }
       ]
     },
@@ -1801,6 +1935,11 @@
           "file": "file-model",
           "sec": "rels",
           "n": 0
+        },
+        {
+          "file": "file-controller",
+          "sec": "methods",
+          "n": 65
         }
       ]
     },
@@ -1847,6 +1986,11 @@
           "file": "file-model",
           "sec": "rels",
           "n": 1
+        },
+        {
+          "file": "file-controller",
+          "sec": "methods",
+          "n": 66
         }
       ]
     },
@@ -1908,6 +2052,11 @@
           "file": "file-model",
           "sec": "rels",
           "n": 2
+        },
+        {
+          "file": "file-controller",
+          "sec": "methods",
+          "n": 67
         }
       ]
     },
@@ -2037,6 +2186,11 @@
           "file": "file-model",
           "sec": "rels",
           "n": 3
+        },
+        {
+          "file": "file-controller",
+          "sec": "methods",
+          "n": 68
         }
       ]
     },
@@ -2112,7 +2266,7 @@
         }
       ],
       "code": "'《field》.《rule》' => '《text》',",
-      "tr": "欄 《field》 が「《rule|words:rule》」に合わない時、「《text》」と出す",
+      "tr": "欄 《field》 が「《rule|words:rule_msg》」に合わない時、「《text》」と出す",
       "o": 69,
       "in": [
         {
@@ -2337,6 +2491,11 @@
           "file": "file-seeder",
           "sec": "body",
           "n": 0
+        },
+        {
+          "file": "file-controller",
+          "sec": "methods",
+          "n": 71
         }
       ]
     },
@@ -2415,6 +2574,11 @@
           "file": "file-seeder",
           "sec": "body",
           "n": 2
+        },
+        {
+          "file": "file-controller",
+          "sec": "methods",
+          "n": 72
         }
       ]
     },
@@ -2439,6 +2603,11 @@
           "file": "file-seeder",
           "sec": "body",
           "n": 3
+        },
+        {
+          "file": "file-controller",
+          "sec": "methods",
+          "n": 75
         }
       ]
     },
@@ -2458,6 +2627,11 @@
           "file": "file-seeder",
           "sec": "body",
           "n": 4
+        },
+        {
+          "file": "file-controller",
+          "sec": "methods",
+          "n": 73
         }
       ]
     },
@@ -2482,6 +2656,11 @@
           "file": "file-seeder",
           "sec": "body",
           "n": 5
+        },
+        {
+          "file": "file-controller",
+          "sec": "methods",
+          "n": 76
         }
       ]
     },
@@ -2515,6 +2694,11 @@
           "file": "file-seeder",
           "sec": "body",
           "n": 6
+        },
+        {
+          "file": "file-controller",
+          "sec": "methods",
+          "n": 74
         }
       ]
     },
@@ -2609,129 +2793,6 @@
           "n": 2
         }
       ]
-    },
-    {
-      "id": "php-when",
-      "name": "条件付き",
-      "lang": "php",
-      "kind": "chain_block",
-      "from": "Laravel",
-      "slots": [
-        {
-          "key": "cond",
-          "label": "条件",
-          "default": "$keyword"
-        },
-        {
-          "key": "pass",
-          "label": "中に渡す値（空可）",
-          "default": ""
-        }
-      ],
-      "open": [
-        {
-          "if": "pass",
-          "t": "->when(《cond》, function ($q, 《pass》) {"
-        },
-        {
-          "if": "!pass",
-          "t": "->when(《cond》, function ($q) {"
-        }
-      ],
-      "close": "})",
-      "inner": [
-        "php-q-where",
-        "php-q-wherehas"
-      ],
-      "tr": "《cond》 が成り立つ時だけ、中の条件を足す",
-      "sum": "条件で絞り込んで",
-      "point": "when()：条件が成り立たない時は、中の条件は足されない",
-      "cond_note": true,
-      "o": 85
-    },
-    {
-      "id": "php-q-where",
-      "name": "絞り込む",
-      "lang": "php",
-      "kind": "line",
-      "from": "Laravel",
-      "slots": [
-        {
-          "key": "col",
-          "label": "カラム",
-          "default": "title"
-        },
-        {
-          "key": "op",
-          "label": "比べ方",
-          "default": "含む",
-          "options": [
-            "同じ",
-            "違う",
-            "含む"
-          ]
-        },
-        {
-          "key": "val",
-          "label": "値",
-          "default": "$keyword"
-        }
-      ],
-      "code": [
-        {
-          "if": "op=同じ",
-          "t": "$q->where('《col》', 《val》);"
-        },
-        {
-          "if": "op=違う",
-          "t": "$q->where('《col》', '!=', 《val》);"
-        },
-        {
-          "if": "op=含む",
-          "t": "$q->where('《col》', 'like', '%' . 《val》 . '%');"
-        }
-      ],
-      "tr": [
-        "カラム 《col》 が 《val》 ",
-        {
-          "if": "op=同じ",
-          "t": "と同じ"
-        },
-        {
-          "if": "op=違う",
-          "t": "と違う"
-        },
-        {
-          "if": "op=含む",
-          "t": "を含む"
-        },
-        "ものに絞る"
-      ],
-      "sum": "条件で絞り込んで",
-      "point": "重ねた条件は、すべて同時に満たすものだけが残る（AND）",
-      "o": 86
-    },
-    {
-      "id": "php-q-wherehas",
-      "name": "関係で絞る",
-      "lang": "php",
-      "kind": "block",
-      "from": "Laravel",
-      "slots": [
-        {
-          "key": "rel",
-          "label": "つながり",
-          "default": "likes"
-        }
-      ],
-      "open": "$q->whereHas('《rel》', function ($q) {",
-      "close": "});",
-      "inner": [
-        "php-q-where",
-        "php-q-wherehas"
-      ],
-      "tr": "つながり 《rel》 の中に、条件に合うものがあるものだけに絞る",
-      "o": 87
     },
     {
       "id": "php-use",
@@ -2867,6 +2928,11 @@
           "file": "file-model",
           "sec": "rels",
           "n": 4
+        },
+        {
+          "file": "file-controller",
+          "sec": "methods",
+          "n": 69
         }
       ]
     },
@@ -2899,6 +2965,11 @@
           "file": "file-model",
           "sec": "rels",
           "n": 5
+        },
+        {
+          "file": "file-controller",
+          "sec": "methods",
+          "n": 70
         }
       ]
     },
@@ -2920,6 +2991,42 @@
       "open": "《sel》 {",
       "close": "}",
       "tr": "《sel》 に当てる見た目",
+      "o": 102,
+      "in": [
+        {
+          "file": "file-css",
+          "sec": "rules",
+          "n": 0
+        }
+      ]
+    },
+    {
+      "id": "css-rule2",
+      "name": "見た目の決まり（2か所）",
+      "lang": "css",
+      "kind": "block",
+      "from": "CSS",
+      "slots": [
+        {
+          "key": "sel",
+          "label": "当てる所1",
+          "default": ".a",
+          "pattern": "[^\\s{};@,][^{};,\\n]*?"
+        },
+        {
+          "key": "sel2",
+          "label": "当てる所2",
+          "default": ".b",
+          "pattern": "[^\\s{};@,][^{};,\\n]*?"
+        }
+      ],
+      "gap": true,
+      "open": [
+        "《sel》,",
+        "《sel2》 {"
+      ],
+      "close": "}",
+      "tr": "《sel》 と 《sel2》 の両方に当てる見た目",
       "o": 102,
       "in": [
         {
@@ -3105,6 +3212,78 @@
           "n": 3
         }
       ]
+    },
+    {
+      "id": "php-mg-drop",
+      "name": "テーブルを消す",
+      "lang": "php",
+      "kind": "line",
+      "from": "Laravel",
+      "slots": [
+        {
+          "key": "table",
+          "label": "テーブル",
+          "default": "todos"
+        }
+      ],
+      "code": "Schema::dropIfExists('《table》');",
+      "tr": "テーブル 《table》 があれば消す（php artisan migrate:rollback で戻す時に動く）",
+      "o": 200,
+      "in": [
+        {
+          "file": "file-controller",
+          "sec": "methods",
+          "n": 80
+        }
+      ]
+    },
+    {
+      "id": "php-mg-dropcol",
+      "name": "カラムを消す",
+      "lang": "php",
+      "kind": "line",
+      "from": "Laravel",
+      "slots": [
+        {
+          "key": "cols",
+          "label": "カラム（'名前' か ['名前', …]）",
+          "default": "'status'"
+        }
+      ],
+      "code": "$table->dropColumn(《cols》);",
+      "tr": "カラム 《cols》 を消す（戻す時に動く）",
+      "o": 201,
+      "in": [
+        {
+          "file": "file-controller",
+          "sec": "methods",
+          "n": 81
+        }
+      ]
+    },
+    {
+      "id": "php-mg-dropfk",
+      "name": "外部キーを外す",
+      "lang": "php",
+      "kind": "line",
+      "from": "Laravel",
+      "slots": [
+        {
+          "key": "cols",
+          "label": "カラム（,で区切る）",
+          "default": "user_id"
+        }
+      ],
+      "code": "$table->dropForeign([《cols|quote_list》]);",
+      "tr": "カラム 《cols|join_dot》 の外部キーの決まりを外す（カラムを消す前に要る）",
+      "o": 202,
+      "in": [
+        {
+          "file": "file-controller",
+          "sec": "methods",
+          "n": 82
+        }
+      ]
     }
   ],
   "parts": [
@@ -3170,13 +3349,6 @@
       "pattern": "method=\"《m》\"",
       "meaning": "《m》 で送る",
       "o": 8
-    },
-    {
-      "id": "blade-hidden",
-      "lang": "blade",
-      "pattern": "type=\"hidden\"",
-      "meaning": "画面には見せずに、値だけ送る",
-      "o": 9
     },
     {
       "id": "php-auth-id",
@@ -3256,12 +3428,11 @@
       "string": "文字",
       "max": "《arg》文字まで",
       "email": "メールの形",
-      "numeric": "数字だけ",
-      "digits_between": "桁数が《arg》の間",
       "unique": "テーブル 《arg》 の中で重複禁止",
       "nullable": "空でもいい",
       "integer": "整数",
-      "*": "《name》"
+      "*": "《name》",
+      "min": "《arg》文字以上"
     },
     "method": {
       "index": "一覧ページを開いた時",
@@ -3353,6 +3524,17 @@
       "vertical-align": "縦の位置",
       "object-fit": "画像の収め方",
       "*": "《name》"
+    },
+    "rule_msg": {
+      "required": "必須",
+      "string": "文字",
+      "max": "文字数の上限",
+      "min": "文字数の下限",
+      "email": "メールの形",
+      "unique": "重複禁止",
+      "nullable": "空でもいい",
+      "integer": "整数",
+      "*": "《name》"
     }
   },
   "laravel_names": [
@@ -3384,10 +3566,6 @@
       "method": "destroy"
     },
     {
-      "tag": "php-find",
-      "method": "show"
-    },
-    {
       "tag": "*",
       "method": "index"
     }
@@ -3401,12 +3579,6 @@
         "php-update"
       ],
       "arg": "Request $request"
-    },
-    {
-      "tags": [
-        "php-find"
-      ],
-      "arg": "$id"
     }
   ]
 }
