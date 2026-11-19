@@ -45,14 +45,22 @@
   <details id="missBox">
     <summary>未登録の一覧（<span id="missN">0</span>件）</summary>
     <ul id="missList" style="font-size:13px;padding-left:20px"></ul>
-    <button class="copy" id="missCopy">まとめてコピー（AIに「辞書に足して」と渡す形）</button>
+    <div class="mbtns"><button class="copy" id="missCopy">まとめてコピー（AIに「辞書に足して」と渡す形）</button><button class="copy" id="missExport">ファイルに書き出す（JSON）</button></div>
   </details>
 
   <details id="stateBox">
     <summary>辞書の状態（<span id="stateSum">読み込み中</span>）</summary>
-    <ul id="stateList" style="font-size:13px;padding-left:20px"></ul>
-    <button class="copy" id="upBtn">JSONを選んで入れる</button>
-    <input type="file" id="upFile" accept=".json,application/json" multiple hidden>
+    <div class="drop" id="dropZone" role="button" tabindex="0" aria-label="辞書のJSONを入れる">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>
+      <b>JSON・zip・フォルダをここにドラッグ</b>
+      <span>押すとファイルを選べます（zipも可）。ページのどこに落としても入ります</span>
+    </div>
+    <input type="file" id="upFile" accept=".json,.zip,application/json,application/zip" multiple hidden>
+    <div class="uprow"><div id="upNow">このタブで入れたファイル：なし</div><button class="copy hide" id="upClear">入れた物を全部外す</button></div>
+    <div id="stateHuman"></div>
+    <details class="inner" id="stateMore"><summary>詳しく（JSONを作る人向け：読んだファイル名・札の数・修正ファイルの番号）</summary>
+      <ul id="stateList" style="font-size:13px;padding-left:20px"></ul>
+    </details>
   </details>
 
   <div class="keys">
@@ -60,6 +68,7 @@
   </div>
 </div>
 <div class="toast" id="toast">コピーしました</div>
+<div class="drophint hide" id="dropHint" aria-hidden="true"><span>ここで離すと、辞書に入れます（JSON・zip・フォルダ）</span></div>
 <script src="js/loader.js"></script>
 </body>
 </html>
