@@ -118,3 +118,23 @@ details.inner{padding:6px 10px;margin-top:8px}
 .dicterr{border-color:var(--warn,#c2410c);background:var(--warn-bg,#fff4ec);font-size:13px}
 .dicterr ul{margin:4px 0 0;padding-left:20px}
 .judge .pre{color:var(--sub)}
+/* 辞書の状態：JSONを入れる落とし口と、人が読む状態 */
+.drop{display:flex;flex-direction:column;align-items:center;gap:2px;border:2px dashed var(--line);border-radius:10px;padding:22px 12px;margin:10px 0 8px;text-align:center;cursor:pointer;color:var(--sub);background:var(--bg)}
+.drop svg{width:28px;height:28px}.drop b{color:var(--ink);font-size:15px}.drop span{font-size:12px}
+.drop:hover,.drop.over{border-color:var(--accent);background:var(--accent-bg);color:var(--accent)}
+.drop.busy{opacity:.6;pointer-events:none}
+.uprow{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;font-size:12px;color:var(--sub)}
+#upClear{white-space:nowrap;flex:none}
+.uprow ul{margin:2px 0 0;padding-left:18px}.uprow code{font-size:11.5px}
+.drophint{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;background:rgba(47,111,98,.12);border:3px dashed var(--accent);pointer-events:none}
+.drophint span{background:var(--card);color:var(--accent);border:1px solid var(--accent);border-radius:999px;padding:8px 18px;font-size:15px;font-weight:600}
+.drophint.hide{display:none}
+.sv-t{font-size:14px;font-weight:600;margin:14px 0 6px;color:var(--ink)}
+.sv-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px}
+.sv-card{background:var(--code);border-radius:8px;padding:8px 10px;font-size:13px;color:var(--ink)}
+.sv-h{font-size:12px;color:var(--sub);margin-bottom:2px}.sv-sub{font-size:12px;color:var(--sub)}.sv-none{font-size:13px;color:var(--sub)}
+.sv-row{display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px 10px;border:1px solid var(--line);border-radius:8px;padding:6px 10px;margin:4px 0;font-size:13px;color:var(--ink)}
+.sv-tag{display:inline-block;font-size:11px;border-radius:999px;padding:0 8px;margin-left:4px;background:var(--code);color:var(--sub);border:1px solid var(--line)}
+.sv-tag.sv-up{background:var(--accent-bg);color:var(--accent);border-color:var(--accent)}.sv-tag.sv-bad{background:var(--warn-bg);color:var(--warn);border-color:var(--warn)}
+.mbtns{display:flex;flex-wrap:wrap;gap:6px}.mfrom{font-size:11px;color:var(--sub);margin-left:4px}
+.upfiles{display:flex;flex-wrap:wrap;gap:4px;margin:4px 0}

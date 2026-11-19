@@ -3,6 +3,10 @@ const $=s=>document.querySelector(s);
 const inp=$('#in'),out=$('#out'),judge=$('#judge'),steps=$('#featSteps');
 let tab='code',override='auto',errSource=null,errOv=null,missing=[],picked=null;
 try{missing=JSON.parse(localStorage.getItem('dict-missing')||'[]')}catch(e){}
+/* 未登録の1件ごとに、どのタブで出たかを覚える（書き出したファイルで、JSON2か3か・どの束かを決める手がかりにする） */
+const TAB_NAME={code:'コードの読み取り',feat:'機能解説',err:'エラー'};
+let missingFrom={};try{missingFrom=JSON.parse(localStorage.getItem('dict-missing-from')||'{}')||{}}catch(e){}
+const saveMissing=()=>{try{localStorage.setItem('dict-missing',JSON.stringify(missing));localStorage.setItem('dict-missing-from',JSON.stringify(missingFrom))}catch(e){}};
 
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const idb=s=>`<span class="id">${esc(s)}</span>`;
@@ -15,12 +19,12 @@ const BROKEN=()=>!!(window.DICT_LOAD&&(DICT_LOAD.refs.length||DICT_LOAD.errs.som
 function addMissing(s){
  if(BROKEN())return;
  s=String(s).trim();if(!s||missing.includes(s))return;
- missing.push(s);try{localStorage.setItem('dict-missing',JSON.stringify(missing))}catch(e){}
+ missing.push(s);missingFrom[s]=TAB_NAME[tab]||'不明';saveMissing();
  renderMissing();
 }
 function renderMissing(){
  $('#missN').textContent=missing.length;
- $('#missList').innerHTML=(BROKEN()?'<li class="miss">辞書の作りに誤りがあるので、直すまで未登録の一覧に足しません（上の帯を見てください）</li>':'')+(missing.map(m=>`<li><code>${esc(m)}</code></li>`).join('')||'<li style="color:var(--sub)">まだありません</li>');
+ $('#missList').innerHTML=(BROKEN()?'<li class="miss">辞書の作りに誤りがあるので、直すまで未登録の一覧に足しません（上の帯を見てください）</li>':'')+(missing.map(m=>`<li><code>${esc(m)}</code> <span class="mfrom">${esc(missingFrom[m]||'不明')}</span></li>`).join('')||'<li style="color:var(--sub)">まだありません</li>');
 }
 /* 辞書にない行の中の ->〇〇( のうち、Laravel が最初から持っている名前に印を付ける */
 const toolNote=l=>LANGS_WITH('call').flatMap(lg=>{const R=LR(lg);return [...new Set([...String(l).matchAll(new RegExp(R.call,'g'))].map(m=>m[1]).filter(n=>(DICT[R.tool_names]||[]).includes(n)))].map(n=>`\n ・${fill(R.call_show||'《name》',k=>k==='name'?n:'',{})} → ${R.tool_label}（まだ辞書に無い）`)}).join('');
@@ -249,7 +253,8 @@ function hits(w,text){const L=text.split('\n'),has=x=>new RegExp(x.replace(/[.*+
  if(w.type==='lacks')return !w.words.some(x=>has(x).test(text));
  return false}
 /* 見分ける文字が当たるエラーのうち、見分ける文字が一番長い（詳しい）物を選ぶ */
-function errPick(v){return (DICT.errors||[]).filter(e=>v.includes(e.match)).sort((a,b)=>b.match.length-a.match.length)[0]||null}
+/* 見分ける文字は、行き先の見分けと同じく、大文字と小文字を区別しない */
+function errPick(v){const lv=String(v).toLowerCase();return (DICT.errors||[]).filter(e=>e&&e.match&&lv.includes(String(e.match).toLowerCase())).sort((a,b)=>b.match.length-a.match.length)[0]||null}
 /* 貼ったエラー文から部品を抜き出す。取れなかった部品は「（部品の名前）」にする */
 function errParts(e,v){const o={};(e.extract||[]).forEach(x=>{let m=null;try{m=new RegExp(x.re).exec(v)}catch(_){}o[x.key]=m&&m.groups&&m.groups.v?m.groups.v:'（'+x.label+'）'});return o}
 function runErr(v){
@@ -638,6 +643,16 @@ $('#clear').onclick=clearAll;
 $('#edit').onclick=()=>{inp.focus();inp.setSelectionRange(inp.value.length,inp.value.length)};
 $('#copy').onclick=copyAll;
 $('#missCopy').onclick=()=>copyText('次のものを辞書に足してください。\n'+missing.map(m=>'- '+m).join('\n'));
+/* 未登録の一覧をファイルに書き出す（JSON。AIに渡して辞書に足してもらう物） */
+function exportMissing(){
+ if(!missing.length){toast('未登録の一覧は空です');return}
+ const d=new Date(),p=n=>String(n).padStart(2,'0'),stamp=`${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}`;
+ const body={kind:'dict-missing',note:'プログラミング辞書の未登録の一覧。辞書に無かった行・文・エラー。辞書のJSONにして足す物',exported_at:`${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`,count:missing.length,
+  dict:(window.DICT_LOAD&&DICT_LOAD.state.loaded)||[],items:missing.map(m=>({text:m,tab:missingFrom[m]||'不明'}))};
+ const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(body,null,2)],{type:'application/json'}));a.download=`dict-missing-${stamp}.json`;
+ document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000);toast('書き出しました');
+}
+$('#missExport').onclick=exportMissing;
 document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>setTab(b.dataset.tab));
 document.addEventListener('keydown',e=>{
  if(e.key==='Escape'){e.preventDefault();clearAll()}
@@ -645,11 +660,35 @@ document.addEventListener('keydown',e=>{
  else if(e.ctrlKey&&e.key==='Enter'){e.preventDefault();picked=null;run()}
  else if(e.altKey&&['1','2','3'].includes(e.key)){e.preventDefault();setTab(['code','feat','err'][+e.key-1])}
 });
+/* 辞書の状態：人が読む形（できること・入っているアプリ×機能・土台）と、JSONを作る人向けの詳しい一覧 */
+const FUNC_NAME={translate:'翻訳',feature:'機能解説',error:'エラー'};
+const fileBase=p=>String(p).replace(/^.*\//,'').replace(/\.json$/,'');
+function bundleName(base,label){if(label)return label.replace(/\s*×\s*/g,' × ');const m=base.match(/^(.*)-([a-z]+)$/);return m?`${m[1]} × ${FUNC_NAME[m[2]]||m[2]}`:base}
+const listCut=(a,n)=>a.length>n?a.slice(0,n).join('・')+` ほか${a.length-n}件`:a.join('・');
 function renderState(){
- const R=window.DICT_LOAD||{state:{loaded:[],applied:[],last:''}},st=R.state;
- const up=st.uploaded||[],ad=st.added||[];
- $('#stateSum').textContent=`札 ${DICT.tags.length}・ファイルの種類 ${DICT.files.length}・修正 ${st.last||'なし'}${up.length?`・選んだファイル ${up.length}`:''}`;
- $('#stateList').innerHTML=[`読み込んだファイル：dict/index.json（目次）、${st.loaded.join('、')}${st.applied.length?'、'+st.applied.join('、'):''}`,`修正ファイル：${st.applied.length?st.applied.join('、'):'なし'}`,`札の数：${DICT.tags.length}`,`ファイルの種類：${DICT.files.map(f=>f.name).join('・')}`,`エラーの数：${(DICT.errors||[]).length}`,`機能解説の例文の数：${(DICT.examples||[]).length}`,`最後に足した修正の番号：${st.last||'なし'}`,...(up.length?[`選んだファイル（このタブを閉じると消えます）：${up.join('、')}`]:[]),...(ad.length?[`目次（index.json）に無いので、目次の最後に足して読んだファイル：${ad.join('、')}。GitHubに置く時は index.json にも足してください`]:[])].map(t=>`<li>${esc(t)}</li>`).join('');
+ const R=window.DICT_LOAD||{state:{loaded:[],applied:[],last:'',files:[]}},st=R.state;
+ const up=st.uploaded||[],ad=st.added||[],fi=st.files||[];
+ const ex=DICT.examples||[],er=DICT.errors||[],fl=DICT.files||[];
+ $('#stateSum').textContent=`読み取り ファイル${fl.length}種類・機能解説 例文${ex.length}件・エラー${er.length}件${up.length?`・入れたファイル ${up.length}`:''}`;
+ /* この辞書でできること（タブごと） */
+ const techTxt=[...TECHS()].sort((a,b)=>(b.default?1:0)-(a.default?1:0)).map(t=>{const vs=(t.versions||[]).map(v=>v.id);return esc(t.name)+(vs.length?`（版 ${esc(vs.join('・'))} を見分ける${t.default_version?`。目印が無ければ ${esc(t.default_version)}`:''}）`:'')+(t.front?'（画面）':'')}).join('・')||'なし';
+ const none='<span class="sv-none">まだ入っていません</span>';
+ const card=(h,body)=>`<div class="sv-card"><div class="sv-h">${h}</div><div class="sv-b">${body}</div></div>`;
+ const can=card('コードの読み取り',fl.length?`読める技術：${techTxt}<br>読めるファイル ${fl.length}種類・読める書き方 ${(DICT.tags||[]).length}個<br><span class="sv-sub">${esc(listCut(fl.map(f=>f.name),8))}</span>`:none)+
+  card('機能解説',ex.length?`作れる物 ${ex.length}件<br><span class="sv-sub">${esc(listCut(ex.map(x=>x.text),5))}</span>`:none)+
+  card('エラー',er.length?`分かるエラー ${er.length}件<br><span class="sv-sub">${esc(listCut(er.map(x=>x.found_by||x.match),6))}</span>`:none);
+ /* 入っているアプリ×機能（束）と土台 */
+ const bundles={};fi.filter(f=>!f.base).forEach(f=>{const b=fileBase(f.path);(bundles[b]=bundles[b]||[]).push(f)});
+ const badge=fs=>fs.some(f=>!f.ok)?'<span class="sv-tag sv-bad">読めていません</span>':fs.some(f=>f.uploaded)?'<span class="sv-tag sv-up">このタブで入れた</span>':'<span class="sv-tag">公開ページ</span>';
+ const what=fs=>{const c={};fs.forEach(f=>Object.entries(f.counts||{}).forEach(([k,v])=>c[k]=(c[k]||0)+v));
+  return [c.tags&&`読める書き方 ${c.tags}個`,c.files&&`ファイルの種類 ${c.files}`,c.parts&&`部品の意味 ${c.parts}`,c.examples&&`例文 ${c.examples}`,c.steps&&`手順 ${c.steps}`,c.errors&&`エラー ${c.errors}`,c.styles&&`見た目 ${c.styles}`].filter(Boolean).join('・')||'中身なし'};
+ const rows=Object.entries(bundles).map(([b,fs])=>{const lb=(fs.find(f=>f.label)||{}).label;return `<div class="sv-row"><span>${esc(bundleName(b,lb))}</span><span class="sv-sub">${esc(what(fs))} ${badge(fs)}</span></div>`}).join('');
+ const bf=fi.filter(f=>f.base),bases=bf.map(f=>`${esc(fileBase(f.path)==='base'?'共通':(f.techName||fileBase(f.path)))}${!f.ok?'（読めていません）':f.uploaded?'（このタブで入れた）':''}`);
+ $('#stateHuman').innerHTML=`<p class="sv-t">この辞書でできること</p><div class="sv-grid">${can}</div>
+<p class="sv-t">入っているアプリ×機能</p>${rows||'<p class="sv-none">まだ入っていません</p>'}
+<p class="sv-sub" style="margin:6px 0 0">土台（技術ごとの読み方の決まり）：${bases.join('・')||'なし'}</p>`;
+ /* JSONを作る人向け：読んだファイル・数・修正の番号 */
+ $('#stateList').innerHTML=[`読み込んだファイル：${st.emptyIndex?'（目次なし。空の目次で読んだ）':'dict/index.json（目次）'}、${st.loaded.join('、')}${st.applied.length?'、'+st.applied.join('、'):''}`,`修正ファイル：${st.applied.length?st.applied.join('、'):'なし'}`,`札の数：${(DICT.tags||[]).length}`,`ファイルの種類：${fl.map(f=>f.name).join('・')}`,`エラーの数：${er.length}`,`機能解説の例文の数：${ex.length}`,`手順の数：${(DICT.steps||[]).length}`,`最後に足した修正の番号：${st.last||'なし'}`,...(up.length?[`入れたファイル（このタブを閉じると消えます）：${up.join('、')}`]:[]),...(ad.length?[`目次（index.json）に無いので、目次の最後に足して読んだファイル：${ad.join('、')}。GitHubに置く時は index.json にも足してください`]:[])].map(t=>`<li>${esc(t)}</li>`).join('');
 }
 /* 読み込みで飛ばした物・名前で呼んだ先が無い所：消せない帯で知らせる */
 function renderDictErr(){
@@ -663,7 +702,7 @@ function renderDictErr(){
 function recheckMissing(){
  const before=missing.length;
  missing=missing.filter(m=>{if(/（[^（）]*）$/.test(m))return true;try{const r=forwardLines(m);return !(r.nodes.length&&!r.unknown.length)}catch(e){return true}});
- if(missing.length!==before){try{localStorage.setItem('dict-missing',JSON.stringify(missing))}catch(e){}}
+ if(missing.length!==before){Object.keys(missingFrom).forEach(k=>{if(!missing.includes(k))delete missingFrom[k]});saveMissing()}
 }
 recheckMissing();initPremise();renderDictErr();renderSamples();renderMissing();renderState();
 (function(){let h='';try{h=decodeURIComponent(location.hash.slice(1))}catch(e){}if(!h)return;const m=h.match(/^(code|feat|err):([\s\S]*)$/);if(m){tab=m[1];inp.value=m[2]}else inp.value=h;setTab(tab)})();
