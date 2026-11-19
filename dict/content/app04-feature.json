@@ -1,0 +1,6977 @@
+{
+  "format": 2,
+  "layer": "content",
+  "tech": "laravel",
+  "label": "app04×機能解説",
+  "note": "完成の物差しの 1章（共通 S1〜S4）と 4章（app04 の 4-1〜4-5）の手順を、作業の地図に出す中身。中身は凍結モックから取り、形は雛形集に合わせた。札は、app04×翻訳の束に無い物だけを足した",
+  "tags": [
+    {
+      "id": "php-fc-feature",
+      "name": "できること",
+      "lang": "php",
+      "kind": "line",
+      "from": "Laravel",
+      "slots": [
+        {
+          "key": "name",
+          "label": "機能",
+          "default": "registration",
+          "options": [
+            {
+              "v": "registration",
+              "label": "会員登録"
+            },
+            {
+              "v": "resetPasswords",
+              "label": "パスワードの再設定"
+            },
+            {
+              "v": "emailVerification",
+              "label": "メールアドレスの確認"
+            },
+            {
+              "v": "updateProfileInformation",
+              "label": "登録情報の変更"
+            },
+            {
+              "v": "updatePasswords",
+              "label": "パスワードの変更"
+            },
+            {
+              "v": "twoFactorAuthentication",
+              "label": "2段階認証"
+            }
+          ]
+        },
+        {
+          "key": "opt",
+          "label": "設定（空可）",
+          "default": ""
+        }
+      ],
+      "code": [
+        {
+          "if": "opt",
+          "t": "Features::《name》(《opt》),"
+        },
+        {
+          "if": "!opt",
+          "t": "Features::《name》(),"
+        }
+      ],
+      "tr": [
+        "《name|label》の画面と処理を使えるようにする",
+        {
+          "if": "opt",
+          "t": "（設定：《opt》）"
+        }
+      ],
+      "o": 83,
+      "in": [
+        {
+          "file": "file-fortify-config",
+          "sec": "features",
+          "n": 0
+        }
+      ]
+    },
+    {
+      "id": "cmd-git-clone",
+      "name": "ダウンロードする",
+      "lang": "cmd",
+      "kind": "line",
+      "from": "git",
+      "slots": [
+        {
+          "key": "url",
+          "label": "リポジトリのURL",
+          "default": "git@github.com:you/app.git",
+          "pattern": "\\S+"
+        }
+      ],
+      "code": "git clone 《url》",
+      "tr": "作業のクラウド保管場所 《url》 から、リポジトリを手元にダウンロードする",
+      "o": 96,
+      "in": [
+        {
+          "file": "file-cmd",
+          "sec": "cmds",
+          "n": 0
+        }
+      ]
+    },
+    {
+      "id": "cmd-git-switch-c",
+      "name": "作業バージョンを作る",
+      "lang": "cmd",
+      "kind": "line",
+      "from": "git",
+      "slots": [
+        {
+          "key": "branch",
+          "label": "作業バージョンの名前",
+          "default": "feature/new",
+          "pattern": "\\S+"
+        }
+      ],
+      "code": "git switch -c 《branch》",
+      "tr": "作業バージョン 《branch》 を作って、そこに切り替える（今までの中身はそのまま持っていく）",
+      "o": 97,
+      "in": [
+        {
+          "file": "file-cmd",
+          "sec": "cmds",
+          "n": 1
+        }
+      ]
+    },
+    {
+      "id": "cmd-git-add",
+      "name": "保存の候補にする",
+      "lang": "cmd",
+      "kind": "line",
+      "from": "git",
+      "slots": [
+        {
+          "key": "path",
+          "label": "ファイル（. は全部）",
+          "default": ".",
+          "pattern": "\\S+",
+          "options": [
+            {
+              "v": ".",
+              "label": "全部"
+            }
+          ]
+        }
+      ],
+      "code": "git add 《path》",
+      "tr": [
+        {
+          "if": "path=.",
+          "t": "変えたファイルを全部、次の保存の候補にする"
+        },
+        {
+          "if": "path!=.",
+          "t": "ファイル 《path》 の変更を、次の保存の候補にする"
+        }
+      ],
+      "o": 98,
+      "in": [
+        {
+          "file": "file-cmd",
+          "sec": "cmds",
+          "n": 2
+        }
+      ]
+    },
+    {
+      "id": "cmd-git-commit",
+      "name": "保存する",
+      "lang": "cmd",
+      "kind": "line",
+      "from": "git",
+      "slots": [
+        {
+          "key": "msg",
+          "label": "保存のメッセージ",
+          "default": ""
+        }
+      ],
+      "code": "git commit -m \"《msg》\"",
+      "tr": "保存の候補を、メッセージ「《msg》」を付けて保存する（保存の識別番号が付く）",
+      "o": 99,
+      "in": [
+        {
+          "file": "file-cmd",
+          "sec": "cmds",
+          "n": 3
+        }
+      ]
+    },
+    {
+      "id": "cmd-git-push",
+      "name": "送る",
+      "lang": "cmd",
+      "kind": "line",
+      "from": "git",
+      "slots": [
+        {
+          "key": "branch",
+          "label": "作業バージョンの名前",
+          "default": "feature/new",
+          "pattern": "\\S+"
+        }
+      ],
+      "code": "git push origin 《branch》",
+      "tr": "作業バージョン 《branch》 の保存を、作業のクラウド保管場所に送る",
+      "o": 100,
+      "in": [
+        {
+          "file": "file-cmd",
+          "sec": "cmds",
+          "n": 4
+        }
+      ]
+    },
+    {
+      "id": "blade-header",
+      "name": "上の帯",
+      "lang": "blade",
+      "kind": "block",
+      "from": "画面",
+      "slots": [],
+      "open": "<header class=\"header\">",
+      "close": "</header>",
+      "looks": {
+        "header": "header"
+      },
+      "tr": "画面の一番上の帯。中にロゴと案内を置く",
+      "o": 105,
+      "in": [
+        {
+          "file": "file-blade",
+          "sec": "body",
+          "n": 1
+        }
+      ]
+    },
+    {
+      "id": "blade-alert",
+      "name": "知らせの帯",
+      "lang": "blade",
+      "kind": "line",
+      "from": "画面",
+      "slots": [],
+      "code": [
+        "@if (session('message'))",
+        "<div class=\"alert--success\">",
+        "    {{ session('message') }}",
+        "</div>",
+        "@endif",
+        "@if ($errors->any())",
+        "<div class=\"alert--danger\">",
+        "    <ul>",
+        "        @foreach ($errors->all() as $error)",
+        "        <li>{{ $error }}</li>",
+        "        @endforeach",
+        "    </ul>",
+        "</div>",
+        "@endif"
+      ],
+      "looks": {
+        "alert--success": "alert-success",
+        "alert--danger": "alert-danger"
+      },
+      "tr": "保存などの後の知らせ（緑の帯）と、決まりに合わなかった時のエラーの一覧（赤の帯）を出す",
+      "o": 108,
+      "in": [
+        {
+          "file": "file-blade",
+          "sec": "body",
+          "n": 0
+        }
+      ]
+    }
+  ],
+  "keywords": {
+    "カテゴリ": [
+      "カテゴリ"
+    ],
+    "TODO": [
+      "TODO",
+      "Todo",
+      "todo"
+    ],
+    "画像": [
+      "画像"
+    ],
+    "足す": [
+      "を足す"
+    ],
+    "状態": [
+      "状態"
+    ],
+    "ログイン": [
+      "ログイン"
+    ],
+    "いいね": [
+      "いいね"
+    ]
+  },
+  "examples": [
+    {
+      "id": "ex-app04",
+      "text": "カテゴリ付きの TODO を作る（平屋）",
+      "words": [
+        "カテゴリ",
+        "TODO"
+      ],
+      "steps": [
+        "st-common-s1",
+        "st-common-s2",
+        "st-common-s3",
+        "st-common-s4"
+      ]
+    },
+    {
+      "id": "ex-img",
+      "text": "画像を足す（平屋に機能を足す）",
+      "words": [
+        "画像",
+        "足す"
+      ],
+      "sets": {
+        "done_img": "1"
+      }
+    },
+    {
+      "id": "ex-status",
+      "text": "状態を足す（平屋に機能を足す）",
+      "words": [
+        "状態",
+        "足す"
+      ],
+      "sets": {
+        "done_status": "1"
+      }
+    },
+    {
+      "id": "ex-login",
+      "text": "ログインを足す（平屋に機能を足す）",
+      "words": [
+        "ログイン",
+        "足す"
+      ],
+      "sets": {
+        "done_login": "1"
+      }
+    },
+    {
+      "id": "ex-like",
+      "text": "いいねを足す（平屋に機能を足す）",
+      "words": [
+        "いいね",
+        "足す"
+      ],
+      "sets": {
+        "done_like": "1"
+      }
+    }
+  ],
+  "questions": [
+    {
+      "key": "name",
+      "text": "この機能・物の名前（英語・1つの形）は？",
+      "type": "text",
+      "default": ""
+    },
+    {
+      "key": "home",
+      "text": "ログインした後に開くURLは？",
+      "type": "text",
+      "default": "/",
+      "if": "ex-fortify|ex-login"
+    },
+    {
+      "key": "repo",
+      "text": "リポジトリのURL（テンプレートから作った物）",
+      "type": "text",
+      "default": "",
+      "if": "ex-app02|ex-app03|ex-app04"
+    },
+    {
+      "key": "branch",
+      "text": "作業バージョンの名前（feature/ の後ろ）",
+      "type": "text",
+      "default": "",
+      "if": "ex-app02|ex-app03|ex-app04|ex-img|ex-status|ex-login|ex-like"
+    },
+    {
+      "key": "msg",
+      "text": "保存のメッセージ",
+      "type": "text",
+      "default": "",
+      "if": "ex-app02|ex-app03|ex-app04|ex-img|ex-status|ex-login|ex-like"
+    },
+    {
+      "key": "title",
+      "text": "画面のタイトル（上の帯のロゴにも使う）",
+      "type": "text",
+      "default": "",
+      "if": "ex-app02|ex-app03|ex-app04|ex-login"
+    },
+    {
+      "key": "cols",
+      "text": "カラムの表（1行が1カラム）",
+      "type": "table",
+      "default": "",
+      "if": "ex-app02|ex-app03|ex-app04|ex-img|ex-status|ex-login",
+      "cols": [
+        {
+          "key": "name",
+          "label": "名前"
+        },
+        {
+          "key": "type",
+          "label": "種類",
+          "options": [
+            {
+              "v": "string",
+              "label": "短い文字"
+            },
+            {
+              "v": "text",
+              "label": "長い文字"
+            },
+            {
+              "v": "integer",
+              "label": "整数"
+            },
+            {
+              "v": "tinyInteger",
+              "label": "小さい整数"
+            },
+            {
+              "v": "boolean",
+              "label": "はい／いいえ"
+            },
+            {
+              "v": "date",
+              "label": "日付"
+            },
+            {
+              "v": "dateTime",
+              "label": "日時"
+            }
+          ]
+        },
+        {
+          "key": "len",
+          "label": "長さ"
+        },
+        {
+          "key": "null",
+          "label": "空",
+          "options": [
+            {
+              "v": "",
+              "label": ""
+            },
+            {
+              "v": "空でもいい",
+              "label": "空でもいい"
+            }
+          ]
+        },
+        {
+          "key": "def",
+          "label": "最初の値"
+        },
+        {
+          "key": "after",
+          "label": "置く場所（後ろ）"
+        },
+        {
+          "key": "uniq",
+          "label": "重複",
+          "options": [
+            {
+              "v": "",
+              "label": ""
+            },
+            {
+              "v": "重複禁止",
+              "label": "重複禁止"
+            }
+          ]
+        },
+        {
+          "key": "fk",
+          "label": "外部キー",
+          "options": [
+            {
+              "v": "",
+              "label": ""
+            },
+            {
+              "v": "外部キー",
+              "label": "外部キー"
+            }
+          ]
+        },
+        {
+          "key": "cascade",
+          "label": "親を消した時",
+          "options": [
+            {
+              "v": "",
+              "label": ""
+            },
+            {
+              "v": "一緒に消す",
+              "label": "一緒に消す"
+            }
+          ]
+        },
+        {
+          "key": "label",
+          "label": "画面の見出し"
+        },
+        {
+          "key": "input",
+          "label": "入力の形",
+          "options": [
+            {
+              "v": "",
+              "label": "なし"
+            },
+            {
+              "v": "text",
+              "label": "text"
+            },
+            {
+              "v": "email",
+              "label": "email"
+            },
+            {
+              "v": "tel",
+              "label": "tel"
+            },
+            {
+              "v": "number",
+              "label": "number"
+            },
+            {
+              "v": "textarea",
+              "label": "textarea"
+            },
+            {
+              "v": "select",
+              "label": "select（親から選ぶ）"
+            }
+          ]
+        },
+        {
+          "key": "upd",
+          "label": "一覧で直せる",
+          "options": [
+            {
+              "v": "",
+              "label": ""
+            },
+            {
+              "v": "直せる",
+              "label": "直せる"
+            }
+          ]
+        },
+        {
+          "key": "rules",
+          "label": "決まり（|で区切る）"
+        },
+        {
+          "key": "fake",
+          "label": "工場で入れる値（空なら種類から）"
+        }
+      ]
+    },
+    {
+      "key": "msgs",
+      "text": "決まりの文言の表",
+      "type": "table",
+      "default": "",
+      "if": "ex-app02|ex-app03|ex-app04",
+      "cols": [
+        {
+          "key": "field",
+          "label": "欄"
+        },
+        {
+          "key": "rule",
+          "label": "決まり"
+        },
+        {
+          "key": "text",
+          "label": "文言"
+        }
+      ]
+    },
+    {
+      "key": "f_store",
+      "text": "作った時の知らせ（空なら出さない）",
+      "type": "text",
+      "default": "",
+      "if": "ex-app02|ex-app04|ex-img|ex-status|ex-login|ex-like"
+    },
+    {
+      "key": "f_update",
+      "text": "直した時の知らせ（空なら出さない）",
+      "type": "text",
+      "default": "",
+      "if": "ex-app02|ex-app04|ex-img|ex-status|ex-login|ex-like"
+    },
+    {
+      "key": "f_delete",
+      "text": "消した時の知らせ（空なら出さない）",
+      "type": "text",
+      "default": "",
+      "if": "ex-app02|ex-app04|ex-img|ex-status|ex-login|ex-like"
+    },
+    {
+      "key": "t_head",
+      "text": "一覧の表の見出し",
+      "type": "text",
+      "default": "",
+      "if": "ex-app02|ex-app04|ex-img|ex-status|ex-login|ex-like"
+    },
+    {
+      "key": "b_create",
+      "text": "作るボタンの文字",
+      "type": "text",
+      "default": "作成",
+      "if": "ex-app02|ex-app04|ex-img|ex-status|ex-login|ex-like"
+    },
+    {
+      "key": "b_update",
+      "text": "直すボタンの文字",
+      "type": "text",
+      "default": "更新",
+      "if": "ex-app02|ex-app04|ex-img|ex-status|ex-login|ex-like"
+    },
+    {
+      "key": "b_delete",
+      "text": "消すボタンの文字",
+      "type": "text",
+      "default": "削除",
+      "if": "ex-app02|ex-app04|ex-img|ex-status|ex-login|ex-like"
+    },
+    {
+      "key": "pname",
+      "text": "親の物の名前（英語・1つの形）",
+      "type": "text",
+      "default": "",
+      "if": "ex-app04|ex-img|ex-status|ex-login|ex-like"
+    },
+    {
+      "key": "pcols",
+      "text": "親のカラムの表",
+      "type": "table",
+      "default": "",
+      "if": "ex-app04",
+      "cols": [
+        {
+          "key": "name",
+          "label": "名前"
+        },
+        {
+          "key": "type",
+          "label": "種類",
+          "options": [
+            {
+              "v": "string",
+              "label": "短い文字"
+            },
+            {
+              "v": "text",
+              "label": "長い文字"
+            },
+            {
+              "v": "integer",
+              "label": "整数"
+            },
+            {
+              "v": "tinyInteger",
+              "label": "小さい整数"
+            },
+            {
+              "v": "boolean",
+              "label": "はい／いいえ"
+            },
+            {
+              "v": "date",
+              "label": "日付"
+            },
+            {
+              "v": "dateTime",
+              "label": "日時"
+            }
+          ]
+        },
+        {
+          "key": "len",
+          "label": "長さ"
+        },
+        {
+          "key": "null",
+          "label": "空",
+          "options": [
+            {
+              "v": "",
+              "label": ""
+            },
+            {
+              "v": "空でもいい",
+              "label": "空でもいい"
+            }
+          ]
+        },
+        {
+          "key": "def",
+          "label": "最初の値"
+        },
+        {
+          "key": "after",
+          "label": "置く場所（後ろ）"
+        },
+        {
+          "key": "uniq",
+          "label": "重複",
+          "options": [
+            {
+              "v": "",
+              "label": ""
+            },
+            {
+              "v": "重複禁止",
+              "label": "重複禁止"
+            }
+          ]
+        },
+        {
+          "key": "fk",
+          "label": "外部キー",
+          "options": [
+            {
+              "v": "",
+              "label": ""
+            },
+            {
+              "v": "外部キー",
+              "label": "外部キー"
+            }
+          ]
+        },
+        {
+          "key": "cascade",
+          "label": "親を消した時",
+          "options": [
+            {
+              "v": "",
+              "label": ""
+            },
+            {
+              "v": "一緒に消す",
+              "label": "一緒に消す"
+            }
+          ]
+        },
+        {
+          "key": "label",
+          "label": "画面の見出し"
+        },
+        {
+          "key": "input",
+          "label": "入力の形",
+          "options": [
+            {
+              "v": "",
+              "label": "なし"
+            },
+            {
+              "v": "text",
+              "label": "text"
+            },
+            {
+              "v": "email",
+              "label": "email"
+            },
+            {
+              "v": "tel",
+              "label": "tel"
+            },
+            {
+              "v": "number",
+              "label": "number"
+            },
+            {
+              "v": "textarea",
+              "label": "textarea"
+            },
+            {
+              "v": "select",
+              "label": "select（親から選ぶ）"
+            }
+          ]
+        },
+        {
+          "key": "upd",
+          "label": "一覧で直せる",
+          "options": [
+            {
+              "v": "",
+              "label": ""
+            },
+            {
+              "v": "直せる",
+              "label": "直せる"
+            }
+          ]
+        },
+        {
+          "key": "rules",
+          "label": "決まり（|で区切る）"
+        },
+        {
+          "key": "fake",
+          "label": "工場で入れる値（空なら種類から）"
+        }
+      ]
+    },
+    {
+      "key": "pmsgs",
+      "text": "親の決まりの文言の表",
+      "type": "table",
+      "default": "",
+      "if": "ex-app04",
+      "cols": [
+        {
+          "key": "field",
+          "label": "欄"
+        },
+        {
+          "key": "rule",
+          "label": "決まり"
+        },
+        {
+          "key": "text",
+          "label": "文言"
+        }
+      ]
+    },
+    {
+      "key": "pf_store",
+      "text": "親を作った時の知らせ",
+      "type": "text",
+      "default": "",
+      "if": "ex-app04"
+    },
+    {
+      "key": "pf_update",
+      "text": "親を直した時の知らせ",
+      "type": "text",
+      "default": "",
+      "if": "ex-app04"
+    },
+    {
+      "key": "pf_delete",
+      "text": "親を消した時の知らせ",
+      "type": "text",
+      "default": "",
+      "if": "ex-app04"
+    },
+    {
+      "key": "p_head",
+      "text": "親の一覧の表の見出し",
+      "type": "text",
+      "default": "",
+      "if": "ex-app04"
+    },
+    {
+      "key": "nav_parent",
+      "text": "上の帯の、親の一覧へ行く文字",
+      "type": "text",
+      "default": "",
+      "if": "ex-app04|ex-img|ex-status|ex-login|ex-like"
+    },
+    {
+      "key": "kcol",
+      "text": "言葉で探すカラム",
+      "type": "text",
+      "default": "",
+      "if": "ex-app04|ex-img|ex-status|ex-login|ex-like"
+    },
+    {
+      "key": "b_search",
+      "text": "探すボタンの文字",
+      "type": "text",
+      "default": "検索",
+      "if": "ex-app04|ex-img|ex-status|ex-login|ex-like"
+    },
+    {
+      "key": "all_label",
+      "text": "選ぶ欄の「全部」の文字",
+      "type": "text",
+      "default": "すべて",
+      "if": "ex-app04|ex-img|ex-status|ex-login|ex-like"
+    },
+    {
+      "key": "pseed",
+      "text": "親の初期データ（,で区切る）",
+      "type": "text",
+      "default": "",
+      "if": "ex-app04"
+    },
+    {
+      "key": "count",
+      "text": "工場で作る件数",
+      "type": "text",
+      "default": "10",
+      "if": "ex-app04"
+    },
+    {
+      "key": "icols",
+      "text": "画像のカラムの表",
+      "type": "table",
+      "default": "",
+      "if": "ex-img",
+      "cols": [
+        {
+          "key": "name",
+          "label": "名前"
+        },
+        {
+          "key": "type",
+          "label": "種類",
+          "options": [
+            {
+              "v": "string",
+              "label": "短い文字"
+            },
+            {
+              "v": "text",
+              "label": "長い文字"
+            },
+            {
+              "v": "integer",
+              "label": "整数"
+            },
+            {
+              "v": "tinyInteger",
+              "label": "小さい整数"
+            },
+            {
+              "v": "boolean",
+              "label": "はい／いいえ"
+            },
+            {
+              "v": "date",
+              "label": "日付"
+            },
+            {
+              "v": "dateTime",
+              "label": "日時"
+            }
+          ]
+        },
+        {
+          "key": "len",
+          "label": "長さ"
+        },
+        {
+          "key": "null",
+          "label": "空",
+          "options": [
+            {
+              "v": "",
+              "label": ""
+            },
+            {
+              "v": "空でもいい",
+              "label": "空でもいい"
+            }
+          ]
+        },
+        {
+          "key": "def",
+          "label": "最初の値"
+        },
+        {
+          "key": "after",
+          "label": "置く場所（後ろ）"
+        },
+        {
+          "key": "uniq",
+          "label": "重複",
+          "options": [
+            {
+              "v": "",
+              "label": ""
+            },
+            {
+              "v": "重複禁止",
+              "label": "重複禁止"
+            }
+          ]
+        },
+        {
+          "key": "fk",
+          "label": "外部キー",
+          "options": [
+            {
+              "v": "",
+              "label": ""
+            },
+            {
+              "v": "外部キー",
+              "label": "外部キー"
+            }
+          ]
+        },
+        {
+          "key": "cascade",
+          "label": "親を消した時",
+          "options": [
+            {
+              "v": "",
+              "label": ""
+            },
+            {
+              "v": "一緒に消す",
+              "label": "一緒に消す"
+            }
+          ]
+        },
+        {
+          "key": "label",
+          "label": "画面の見出し"
+        },
+        {
+          "key": "input",
+          "label": "入力の形",
+          "options": [
+            {
+              "v": "",
+              "label": "なし"
+            },
+            {
+              "v": "text",
+              "label": "text"
+            },
+            {
+              "v": "email",
+              "label": "email"
+            },
+            {
+              "v": "tel",
+              "label": "tel"
+            },
+            {
+              "v": "number",
+              "label": "number"
+            },
+            {
+              "v": "textarea",
+              "label": "textarea"
+            },
+            {
+              "v": "select",
+              "label": "select（親から選ぶ）"
+            }
+          ]
+        },
+        {
+          "key": "upd",
+          "label": "一覧で直せる",
+          "options": [
+            {
+              "v": "",
+              "label": ""
+            },
+            {
+              "v": "直せる",
+              "label": "直せる"
+            }
+          ]
+        },
+        {
+          "key": "rules",
+          "label": "決まり（|で区切る）"
+        },
+        {
+          "key": "fake",
+          "label": "工場で入れる値（空なら種類から）"
+        }
+      ]
+    },
+    {
+      "key": "ifield",
+      "text": "画像を送る欄の名前",
+      "type": "text",
+      "default": "image",
+      "if": "ex-img|ex-status|ex-login|ex-like"
+    },
+    {
+      "key": "idir",
+      "text": "画像を置くフォルダ",
+      "type": "text",
+      "default": "images",
+      "if": "ex-img|ex-status|ex-login|ex-like"
+    },
+    {
+      "key": "scols",
+      "text": "状態のカラムの表",
+      "type": "table",
+      "default": "",
+      "if": "ex-status",
+      "cols": [
+        {
+          "key": "name",
+          "label": "名前"
+        },
+        {
+          "key": "type",
+          "label": "種類",
+          "options": [
+            {
+              "v": "string",
+              "label": "短い文字"
+            },
+            {
+              "v": "text",
+              "label": "長い文字"
+            },
+            {
+              "v": "integer",
+              "label": "整数"
+            },
+            {
+              "v": "tinyInteger",
+              "label": "小さい整数"
+            },
+            {
+              "v": "boolean",
+              "label": "はい／いいえ"
+            },
+            {
+              "v": "date",
+              "label": "日付"
+            },
+            {
+              "v": "dateTime",
+              "label": "日時"
+            }
+          ]
+        },
+        {
+          "key": "len",
+          "label": "長さ"
+        },
+        {
+          "key": "null",
+          "label": "空",
+          "options": [
+            {
+              "v": "",
+              "label": ""
+            },
+            {
+              "v": "空でもいい",
+              "label": "空でもいい"
+            }
+          ]
+        },
+        {
+          "key": "def",
+          "label": "最初の値"
+        },
+        {
+          "key": "after",
+          "label": "置く場所（後ろ）"
+        },
+        {
+          "key": "uniq",
+          "label": "重複",
+          "options": [
+            {
+              "v": "",
+              "label": ""
+            },
+            {
+              "v": "重複禁止",
+              "label": "重複禁止"
+            }
+          ]
+        },
+        {
+          "key": "fk",
+          "label": "外部キー",
+          "options": [
+            {
+              "v": "",
+              "label": ""
+            },
+            {
+              "v": "外部キー",
+              "label": "外部キー"
+            }
+          ]
+        },
+        {
+          "key": "cascade",
+          "label": "親を消した時",
+          "options": [
+            {
+              "v": "",
+              "label": ""
+            },
+            {
+              "v": "一緒に消す",
+              "label": "一緒に消す"
+            }
+          ]
+        },
+        {
+          "key": "label",
+          "label": "画面の見出し"
+        },
+        {
+          "key": "input",
+          "label": "入力の形",
+          "options": [
+            {
+              "v": "",
+              "label": "なし"
+            },
+            {
+              "v": "text",
+              "label": "text"
+            },
+            {
+              "v": "email",
+              "label": "email"
+            },
+            {
+              "v": "tel",
+              "label": "tel"
+            },
+            {
+              "v": "number",
+              "label": "number"
+            },
+            {
+              "v": "textarea",
+              "label": "textarea"
+            },
+            {
+              "v": "select",
+              "label": "select（親から選ぶ）"
+            }
+          ]
+        },
+        {
+          "key": "upd",
+          "label": "一覧で直せる",
+          "options": [
+            {
+              "v": "",
+              "label": ""
+            },
+            {
+              "v": "直せる",
+              "label": "直せる"
+            }
+          ]
+        },
+        {
+          "key": "rules",
+          "label": "決まり（|で区切る）"
+        },
+        {
+          "key": "fake",
+          "label": "工場で入れる値（空なら種類から）"
+        }
+      ]
+    },
+    {
+      "key": "sopts",
+      "text": "状態の選択肢の表",
+      "type": "table",
+      "default": "",
+      "if": "ex-status|ex-login|ex-like",
+      "cols": [
+        {
+          "key": "v",
+          "label": "値"
+        },
+        {
+          "key": "label",
+          "label": "画面の文字"
+        }
+      ]
+    },
+    {
+      "key": "ucols",
+      "text": "会員登録の欄の表",
+      "type": "table",
+      "default": "",
+      "if": "ex-login",
+      "cols": [
+        {
+          "key": "name",
+          "label": "欄の名前"
+        },
+        {
+          "key": "label",
+          "label": "画面の見出し"
+        },
+        {
+          "key": "input",
+          "label": "入力の形",
+          "options": [
+            {
+              "v": "text",
+              "label": "text"
+            },
+            {
+              "v": "email",
+              "label": "email"
+            },
+            {
+              "v": "password",
+              "label": "password"
+            }
+          ]
+        },
+        {
+          "key": "login",
+          "label": "ログインでも使う",
+          "options": [
+            {
+              "v": "",
+              "label": ""
+            },
+            {
+              "v": "使う",
+              "label": "使う"
+            }
+          ]
+        },
+        {
+          "key": "rules",
+          "label": "会員登録の決まり（|で区切る）"
+        },
+        {
+          "key": "lrules",
+          "label": "ログインの決まり（|で区切る）"
+        }
+      ]
+    },
+    {
+      "key": "umsgs",
+      "text": "会員登録の決まりの文言の表",
+      "type": "table",
+      "default": "",
+      "if": "ex-login",
+      "cols": [
+        {
+          "key": "field",
+          "label": "欄"
+        },
+        {
+          "key": "rule",
+          "label": "決まり"
+        },
+        {
+          "key": "text",
+          "label": "文言"
+        }
+      ]
+    },
+    {
+      "key": "oafter",
+      "text": "持ち主のカラムを置く場所（後ろ）",
+      "type": "text",
+      "default": "",
+      "if": "ex-login"
+    },
+    {
+      "key": "h_login",
+      "text": "ログインの画面の見出し",
+      "type": "text",
+      "default": "Login",
+      "if": "ex-login"
+    },
+    {
+      "key": "h_register",
+      "text": "会員登録の画面の見出し",
+      "type": "text",
+      "default": "Register",
+      "if": "ex-login"
+    },
+    {
+      "key": "b_login",
+      "text": "ログインのボタンの文字",
+      "type": "text",
+      "default": "ログイン",
+      "if": "ex-login"
+    },
+    {
+      "key": "b_register",
+      "text": "会員登録のボタンの文字",
+      "type": "text",
+      "default": "登録",
+      "if": "ex-login"
+    },
+    {
+      "key": "b_logout",
+      "text": "ログアウトのボタンの文字",
+      "type": "text",
+      "default": "ログアウト",
+      "if": "ex-login|ex-like"
+    },
+    {
+      "key": "t_to_register",
+      "text": "会員登録へ行く文字",
+      "type": "text",
+      "default": "新規登録",
+      "if": "ex-login"
+    },
+    {
+      "key": "t_to_login",
+      "text": "ログインへ行く文字",
+      "type": "text",
+      "default": "ログイン",
+      "if": "ex-login"
+    },
+    {
+      "key": "lname",
+      "text": "いいねの物の名前（英語・1つの形）",
+      "type": "text",
+      "default": "",
+      "if": "ex-like"
+    },
+    {
+      "key": "f_like",
+      "text": "いいねした時の知らせ",
+      "type": "text",
+      "default": "",
+      "if": "ex-like"
+    },
+    {
+      "key": "f_unlike",
+      "text": "いいねを外した時の知らせ",
+      "type": "text",
+      "default": "",
+      "if": "ex-like"
+    },
+    {
+      "key": "b_like",
+      "text": "いいねのボタンの文字",
+      "type": "text",
+      "default": "いいね",
+      "if": "ex-like"
+    },
+    {
+      "key": "b_unlike",
+      "text": "いいねを外すボタンの文字",
+      "type": "text",
+      "default": "いいね解除",
+      "if": "ex-like"
+    },
+    {
+      "key": "t_count",
+      "text": "件数の後ろの文字",
+      "type": "text",
+      "default": "件",
+      "if": "ex-like"
+    },
+    {
+      "key": "done_img",
+      "text": "済んだ機能：画像（1 なら済み）",
+      "type": "choice",
+      "default": "",
+      "if": "ex-app04|ex-img|ex-status|ex-login|ex-like",
+      "choices": [
+        {
+          "v": "",
+          "label": "まだ"
+        },
+        {
+          "v": "1",
+          "label": "済み"
+        }
+      ]
+    },
+    {
+      "key": "done_status",
+      "text": "済んだ機能：状態（1 なら済み）",
+      "type": "choice",
+      "default": "",
+      "if": "ex-app04|ex-img|ex-status|ex-login|ex-like",
+      "choices": [
+        {
+          "v": "",
+          "label": "まだ"
+        },
+        {
+          "v": "1",
+          "label": "済み"
+        }
+      ]
+    },
+    {
+      "key": "done_login",
+      "text": "済んだ機能：ログイン（1 なら済み）",
+      "type": "choice",
+      "default": "",
+      "if": "ex-app04|ex-img|ex-status|ex-login|ex-like",
+      "choices": [
+        {
+          "v": "",
+          "label": "まだ"
+        },
+        {
+          "v": "1",
+          "label": "済み"
+        }
+      ]
+    },
+    {
+      "key": "done_like",
+      "text": "済んだ機能：いいね（1 なら済み）",
+      "type": "choice",
+      "default": "",
+      "if": "ex-app04|ex-img|ex-status|ex-login|ex-like",
+      "choices": [
+        {
+          "v": "",
+          "label": "まだ"
+        },
+        {
+          "v": "1",
+          "label": "済み"
+        }
+      ]
+    }
+  ],
+  "derived": [
+    {
+      "key": "model",
+      "text": "モデル名",
+      "t": "《name|ucfirst》",
+      "if": "ex-app02|ex-app03|ex-app04|ex-img|ex-status|ex-login|ex-like"
+    },
+    {
+      "key": "table",
+      "text": "テーブル名",
+      "t": "《name|table》",
+      "if": "ex-app02|ex-app03|ex-app04|ex-img|ex-status|ex-login|ex-like"
+    },
+    {
+      "key": "ctrl",
+      "text": "コントローラー名",
+      "t": "《model》Controller",
+      "if": "ex-app02|ex-app03|ex-app04|ex-img|ex-status|ex-login|ex-like"
+    },
+    {
+      "key": "req",
+      "text": "決まりのファイル名",
+      "t": "《model》Request",
+      "if": "ex-app02|ex-app03|ex-app04|ex-img|ex-status|ex-login|ex-like"
+    },
+    {
+      "key": "var",
+      "text": "1件の変数名",
+      "t": "《name》",
+      "if": "ex-app02|ex-app03|ex-app04|ex-img|ex-status|ex-login|ex-like"
+    },
+    {
+      "key": "vars",
+      "text": "全件の変数名",
+      "t": "《table》",
+      "if": "ex-app02|ex-app04|ex-img|ex-status|ex-login|ex-like"
+    },
+    {
+      "key": "mg",
+      "text": "マイグレーションのファイル名",
+      "t": "create_《table》_table",
+      "if": "ex-app02|ex-app03|ex-app04"
+    },
+    {
+      "key": "url",
+      "text": "URL",
+      "t": "/《table》",
+      "if": "ex-app02|ex-app03|ex-app04|ex-img|ex-status|ex-login|ex-like"
+    },
+    {
+      "key": "view",
+      "text": "画面のファイル名",
+      "t": "index",
+      "if": "ex-app02|ex-app03|ex-app04|ex-img|ex-status|ex-login|ex-like"
+    },
+    {
+      "key": "rname",
+      "text": "ルートの名前",
+      "t": "《table》.index",
+      "if": "ex-app02|ex-app04|ex-img|ex-status|ex-login|ex-like"
+    },
+    {
+      "key": "logo",
+      "text": "上の帯のロゴの文字",
+      "t": "《title》",
+      "if": "ex-app02|ex-app03|ex-app04|ex-login"
+    },
+    {
+      "key": "pmodel",
+      "text": "親のモデル名",
+      "t": "《pname|ucfirst》",
+      "if": "ex-app04|ex-img|ex-status|ex-login|ex-like"
+    },
+    {
+      "key": "ptable",
+      "text": "親のテーブル名",
+      "t": "《pname|table》",
+      "if": "ex-app04|ex-img|ex-status|ex-login|ex-like"
+    },
+    {
+      "key": "pctl",
+      "text": "親のコントローラー名",
+      "t": "《pmodel》Controller",
+      "if": "ex-app04|ex-img|ex-status|ex-login|ex-like"
+    },
+    {
+      "key": "preq",
+      "text": "親の決まりのファイル名",
+      "t": "《pmodel》Request",
+      "if": "ex-app04"
+    },
+    {
+      "key": "pvar",
+      "text": "親の1件の変数名",
+      "t": "《pname》",
+      "if": "ex-app04|ex-img|ex-status|ex-login|ex-like"
+    },
+    {
+      "key": "pvars",
+      "text": "親の全件の変数名",
+      "t": "《ptable》",
+      "if": "ex-app04|ex-img|ex-status|ex-login|ex-like"
+    },
+    {
+      "key": "pmg",
+      "text": "親のマイグレーションのファイル名",
+      "t": "create_《ptable》_table",
+      "if": "ex-app04"
+    },
+    {
+      "key": "purl",
+      "text": "親のURL",
+      "t": "/《ptable》",
+      "if": "ex-app04|ex-img|ex-status|ex-login|ex-like"
+    },
+    {
+      "key": "pview",
+      "text": "親の画面のファイル名",
+      "t": "《pname》",
+      "if": "ex-app04|ex-img|ex-status|ex-login|ex-like"
+    },
+    {
+      "key": "prel",
+      "text": "親へのつながりの名前",
+      "t": "《pname》",
+      "if": "ex-app04|ex-img|ex-status|ex-login|ex-like"
+    },
+    {
+      "key": "fk",
+      "text": "外部キー",
+      "t": "《pname》_id",
+      "if": "ex-app04|ex-img|ex-status|ex-login|ex-like"
+    },
+    {
+      "key": "plabel",
+      "text": "親の画面に出すカラム",
+      "t": "《pcols|first》",
+      "if": "ex-app04|ex-img|ex-status|ex-login|ex-like"
+    },
+    {
+      "key": "pseeder",
+      "text": "親の Seeder の名前",
+      "t": "《pmodel》Seeder",
+      "if": "ex-app04"
+    },
+    {
+      "key": "seeder",
+      "text": "Seeder の名前",
+      "t": "《model》Seeder",
+      "if": "ex-app04"
+    },
+    {
+      "key": "factory",
+      "text": "工場の名前",
+      "t": "《model》Factory",
+      "if": "ex-app04"
+    },
+    {
+      "key": "icol",
+      "text": "画像のカラム",
+      "t": "《icols|first》",
+      "if": "ex-img|ex-status|ex-login|ex-like"
+    },
+    {
+      "key": "img_mg",
+      "text": "画像のマイグレーションのファイル名",
+      "t": "add_《icol》_to_《table》",
+      "if": "ex-img"
+    },
+    {
+      "key": "scol",
+      "text": "状態のカラム",
+      "t": "《scols|first》",
+      "if": "ex-status|ex-login|ex-like"
+    },
+    {
+      "key": "st_mg",
+      "text": "状態のマイグレーションのファイル名",
+      "t": "add_《scol》_to_《table》",
+      "if": "ex-status"
+    },
+    {
+      "key": "ofk",
+      "text": "持ち主のカラム（外部キー）",
+      "t": "user_id",
+      "if": "ex-login|ex-like"
+    },
+    {
+      "key": "own_mg",
+      "text": "持ち主のマイグレーションのファイル名",
+      "t": "add_《ofk》_to_《table》",
+      "if": "ex-login"
+    },
+    {
+      "key": "ltable",
+      "text": "いいねのテーブル名",
+      "t": "《lname|table》",
+      "if": "ex-like"
+    },
+    {
+      "key": "lmg",
+      "text": "いいねのマイグレーションのファイル名",
+      "t": "create_《ltable》_table",
+      "if": "ex-like"
+    },
+    {
+      "key": "lrel",
+      "text": "いいねのつながりの名前",
+      "t": "《ltable》",
+      "if": "ex-like"
+    },
+    {
+      "key": "lfk",
+      "text": "いいねの中の自分の番号のカラム",
+      "t": "《name》_id",
+      "if": "ex-like"
+    }
+  ],
+  "rows": [
+    {
+      "if": "ex-app04",
+      "fixed": "（平屋：親と子）",
+      "action": "親と子のテーブルから画面・初期データまで作る",
+      "file": "マイグレーション・モデル・決まり・コントローラー・ルート・画面・CSS・初期データ"
+    },
+    {
+      "if": "ex-img",
+      "words": [
+        "画像"
+      ],
+      "action": "画像のカラムを足し、受け取って保存し、一覧に出す",
+      "file": "マイグレーション・モデル・コントローラー・画面・CSS"
+    },
+    {
+      "if": "ex-status",
+      "words": [
+        "状態"
+      ],
+      "action": "状態のカラムを足し、選んで作り、状態で探す",
+      "file": "マイグレーション・モデル・コントローラー・画面・CSS"
+    },
+    {
+      "if": "ex-login",
+      "words": [
+        "ログイン"
+      ],
+      "action": "Fortify を入れ、自分の分だけ見えるようにする",
+      "file": "composer・設定・プロバイダー・Actions・画面・マイグレーション・モデル・コントローラー・ルート"
+    },
+    {
+      "if": "ex-like",
+      "words": [
+        "いいね"
+      ],
+      "action": "いいねのテーブルとつながりを作り、押せるようにする",
+      "file": "マイグレーション・モデル・コントローラー・ルート・画面・CSS"
+    }
+  ],
+  "steps": [
+    {
+      "id": "st-common-s1",
+      "title": "共通 S1 git：テンプレートのリポジトリをダウンロードする",
+      "do": [
+        {
+          "kind": "cmd",
+          "tag": "cmd-git-clone",
+          "set": {
+            "url": "《repo》"
+          }
+        }
+      ]
+    },
+    {
+      "id": "st-common-s2",
+      "title": "共通 S2 git：作業バージョンを作る",
+      "do": [
+        {
+          "kind": "cmd",
+          "tag": "cmd-git-switch-c",
+          "set": {
+            "branch": "feature/《branch》"
+          }
+        }
+      ]
+    },
+    {
+      "id": "st-common-s3",
+      "title": "共通 S3 確かめる：最初の画面が出るか",
+      "do": [
+        {
+          "kind": "check",
+          "open": "http://localhost/",
+          "expect": [
+            "Laravel の最初の画面（welcome）が出る"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "st-common-s4",
+      "title": "共通 S4 b 新規：CSS の土台 sanitize.css を置く",
+      "do": [
+        {
+          "kind": "new",
+          "file": "file-sanitize"
+        }
+      ]
+    },
+    {
+      "id": "st-app04-01",
+      "if": "ex-app04",
+      "title": "4-1 #1〜4 コマンド→a 全部：親と子のテーブル",
+      "do": [
+        {
+          "kind": "cmd",
+          "cmd": "php artisan make:migration 《pmg》",
+          "desc": "テーブル 《ptable》 を作る設計図のファイルを作る"
+        },
+        {
+          "kind": "replace",
+          "from": "mg-parent"
+        },
+        {
+          "kind": "cmd",
+          "cmd": "php artisan make:migration 《mg》",
+          "desc": "テーブル 《table》 を作る設計図のファイルを作る"
+        },
+        {
+          "kind": "replace",
+          "from": "mg-main"
+        }
+      ]
+    },
+    {
+      "id": "st-app04-02",
+      "if": "ex-app04",
+      "title": "4-1 #5 コマンド：マイグレーションを実行する",
+      "do": [
+        {
+          "kind": "cmd",
+          "cmd": "php artisan migrate",
+          "desc": "設計図どおりに、DB にテーブルを作る"
+        }
+      ]
+    },
+    {
+      "id": "st-app04-03",
+      "if": "ex-app04",
+      "title": "4-1 #6〜7 コマンド→a 全部：親と子のモデル",
+      "do": [
+        {
+          "kind": "cmd",
+          "cmd": "php artisan make:model 《pmodel》",
+          "desc": "モデル 《pmodel》 のファイルを作る"
+        },
+        {
+          "kind": "replace",
+          "from": "model-parent"
+        },
+        {
+          "kind": "cmd",
+          "cmd": "php artisan make:model 《model》",
+          "desc": "モデル 《model》 のファイルを作る"
+        },
+        {
+          "kind": "replace",
+          "from": "model-main"
+        }
+      ]
+    },
+    {
+      "id": "st-app04-04",
+      "if": "ex-app04",
+      "title": "4-1 #8〜9 コマンド→a 全部：決まり2つ",
+      "do": [
+        {
+          "kind": "cmd",
+          "cmd": "php artisan make:request 《req》",
+          "desc": "決まり 《req》 のファイルを作る"
+        },
+        {
+          "kind": "replace",
+          "from": "req-main"
+        },
+        {
+          "kind": "cmd",
+          "cmd": "php artisan make:request 《preq》",
+          "desc": "決まり 《preq》 のファイルを作る"
+        },
+        {
+          "kind": "replace",
+          "from": "req-parent"
+        }
+      ]
+    },
+    {
+      "id": "st-app04-05",
+      "if": "ex-app04",
+      "title": "4-1 #10〜11 コマンド→a 全部：コントローラー2つ",
+      "do": [
+        {
+          "kind": "cmd",
+          "cmd": "php artisan make:controller 《ctrl》",
+          "desc": "コントローラー 《ctrl》 のファイルを作る"
+        },
+        {
+          "kind": "replace",
+          "from": "ctl-main"
+        },
+        {
+          "kind": "cmd",
+          "cmd": "php artisan make:controller 《pctl》",
+          "desc": "コントローラー 《pctl》 のファイルを作る"
+        },
+        {
+          "kind": "replace",
+          "from": "ctl-parent"
+        }
+      ]
+    },
+    {
+      "id": "st-app04-06",
+      "if": "ex-app04",
+      "title": "4-1 #12〜13 b→a：ルート",
+      "do": [
+        {
+          "kind": "add",
+          "path": "routes/web.php",
+          "at": "uses",
+          "code": [
+            {
+              "tag": "php-use",
+              "set": {
+                "cls": "App\\Http\\Controllers\\《ctrl》"
+              }
+            },
+            {
+              "tag": "php-use",
+              "set": {
+                "cls": "App\\Http\\Controllers\\《pctl》"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "edit",
+          "pick": "routes-list",
+          "sec": "routes",
+          "path": "routes/web.php",
+          "find": "Route::get('/', function () {",
+          "nouses": true
+        }
+      ]
+    },
+    {
+      "id": "st-app04-07",
+      "if": "ex-app04",
+      "title": "4-1 #14 b 新規：外枠・一覧・親の一覧の画面と CSS",
+      "do": [
+        {
+          "kind": "new",
+          "from": "view-layout"
+        },
+        {
+          "kind": "new",
+          "from": "view-index"
+        },
+        {
+          "kind": "new",
+          "from": "view-parent"
+        },
+        {
+          "kind": "css",
+          "screens": [
+            {
+              "from": "view-layout"
+            },
+            {
+              "from": "view-index"
+            },
+            {
+              "from": "view-parent"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "st-app04-08",
+      "if": "ex-app04",
+      "title": "4-1 #15〜18 コマンド→a 全部／a：初期データと工場",
+      "do": [
+        {
+          "kind": "cmd",
+          "cmd": "php artisan make:seeder 《pseeder》",
+          "desc": "初期データ 《pseeder》 のファイルを作る"
+        },
+        {
+          "kind": "replace",
+          "from": "seeder-parent"
+        },
+        {
+          "kind": "cmd",
+          "cmd": "php artisan make:seeder 《seeder》",
+          "desc": "初期データ 《seeder》 のファイルを作る"
+        },
+        {
+          "kind": "replace",
+          "from": "seeder-main"
+        },
+        {
+          "kind": "cmd",
+          "cmd": "php artisan make:factory 《factory》",
+          "desc": "工場 《factory》 のファイルを作る"
+        },
+        {
+          "kind": "replace",
+          "from": "factory-main"
+        },
+        {
+          "kind": "edit",
+          "path": "database/seeders/DatabaseSeeder.php",
+          "find": "public function run()",
+          "code": [
+            {
+              "tag": "php-method",
+              "set": {
+                "name": "run",
+                "ret": "void"
+              },
+              "kids": [
+                {
+                  "tag": "php-sd-call",
+                  "kids": [
+                    {
+                      "tag": "php-sd-class",
+                      "set": {
+                        "name": "《pseeder》"
+                      }
+                    },
+                    {
+                      "tag": "php-sd-class",
+                      "set": {
+                        "name": "《seeder》"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "st-app04-09",
+      "if": "ex-app04",
+      "title": "4-1 #19 コマンド：データを作り直して初期データを入れる",
+      "do": [
+        {
+          "kind": "cmd",
+          "cmd": "php artisan migrate:fresh --seed",
+          "desc": "DB を空にして作り直し、初期データを入れる"
+        }
+      ]
+    },
+    {
+      "id": "st-app04-10",
+      "if": "ex-app04",
+      "title": "4-1 #20 git→確かめる",
+      "do": [
+        {
+          "kind": "cmd",
+          "tag": "cmd-git-add",
+          "set": {
+            "path": "."
+          }
+        },
+        {
+          "kind": "cmd",
+          "tag": "cmd-git-commit",
+          "set": {
+            "msg": "《msg》"
+          }
+        },
+        {
+          "kind": "cmd",
+          "tag": "cmd-git-push",
+          "set": {
+            "branch": "feature/《branch》"
+          }
+        },
+        {
+          "kind": "check",
+          "open": "http://localhost/",
+          "expect": [
+            "「《nav_parent》」から親の一覧を開き、作成・更新・削除が効く",
+            "トップで 《cols|has:input|col:label》 を入れて作れる。一覧に親の名前も出る",
+            "言葉と親で探すと、合う物だけが並ぶ"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "st-app04-11",
+      "if": "ex-img",
+      "title": "4-2 #21〜23 コマンド→a 全部→コマンド：画像のカラムを足す",
+      "do": [
+        {
+          "kind": "cmd",
+          "cmd": "php artisan make:migration 《img_mg》 --table=《table》",
+          "desc": "テーブル 《table》 にカラムを足す設計図のファイルを作る"
+        },
+        {
+          "kind": "replace",
+          "from": "mg-img"
+        },
+        {
+          "kind": "cmd",
+          "cmd": "php artisan migrate",
+          "desc": "設計図どおりに、DB にカラムを足す"
+        }
+      ]
+    },
+    {
+      "id": "st-app04-12",
+      "if": "ex-img",
+      "title": "4-2 #24 a：モデルの書き込んでいいカラムの行",
+      "do": [
+        {
+          "kind": "edit",
+          "from": "model-main",
+          "patch": "書き込んでいいカラム"
+        }
+      ]
+    },
+    {
+      "id": "st-app04-13",
+      "if": "ex-img",
+      "title": "4-2 #25 a：画像を受け取って保存する（store のまとまり）",
+      "do": [
+        {
+          "kind": "edit",
+          "pick": "ctl-main",
+          "find": "public function store(",
+          "nouses": true
+        }
+      ]
+    },
+    {
+      "id": "st-app04-14",
+      "if": "ex-img",
+      "title": "4-2 #26 a：作成フォーム・一覧のまとまりと CSS",
+      "do": [
+        {
+          "kind": "edit",
+          "pick": "view-index",
+          "find": "<form class=\"create-form\""
+        },
+        {
+          "kind": "edit",
+          "pick": "view-index",
+          "find": "<table class=\"list-table__inner\">"
+        },
+        {
+          "kind": "css",
+          "screens": [
+            {
+              "from": "view-index"
+            }
+          ],
+          "only": [
+            "index"
+          ],
+          "mode": "replace"
+        }
+      ]
+    },
+    {
+      "id": "st-app04-15",
+      "if": "ex-img",
+      "title": "4-2 #27 コマンド：storage のリンクを作る",
+      "do": [
+        {
+          "kind": "cmd",
+          "cmd": "php artisan storage:link",
+          "desc": "public/storage から storage/app/public へのつなぎを作る（保存した画像を画面で見せるため）"
+        }
+      ]
+    },
+    {
+      "id": "st-app04-16",
+      "if": "ex-img",
+      "title": "4-2 #28 git→確かめる",
+      "do": [
+        {
+          "kind": "cmd",
+          "tag": "cmd-git-add",
+          "set": {
+            "path": "."
+          }
+        },
+        {
+          "kind": "cmd",
+          "tag": "cmd-git-commit",
+          "set": {
+            "msg": "《msg》"
+          }
+        },
+        {
+          "kind": "cmd",
+          "tag": "cmd-git-push",
+          "set": {
+            "branch": "feature/《branch》"
+          }
+        },
+        {
+          "kind": "check",
+          "open": "http://localhost/",
+          "expect": [
+            "ファイルを選んで作ると、一覧に画像が出る"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "st-app04-17",
+      "if": "ex-status",
+      "title": "4-3 #29〜31 コマンド→a 全部→コマンド：状態のカラムを足す",
+      "do": [
+        {
+          "kind": "cmd",
+          "cmd": "php artisan make:migration 《st_mg》 --table=《table》",
+          "desc": "テーブル 《table》 にカラムを足す設計図のファイルを作る"
+        },
+        {
+          "kind": "replace",
+          "from": "mg-status"
+        },
+        {
+          "kind": "cmd",
+          "cmd": "php artisan migrate",
+          "desc": "設計図どおりに、DB にカラムを足す"
+        }
+      ]
+    },
+    {
+      "id": "st-app04-18",
+      "if": "ex-status",
+      "title": "4-3 #32〜33 a／b：書き込んでいいカラムの行と、状態の絞り込み",
+      "do": [
+        {
+          "kind": "edit",
+          "from": "model-main",
+          "patch": "書き込んでいいカラム"
+        },
+        {
+          "kind": "add",
+          "from": "model-main",
+          "at": "class_end",
+          "code": [
+            {
+              "tag": "php-md-scope-cond",
+              "set": {
+                "name": "StatusSearch",
+                "var": "《scol》",
+                "cond": "$《scol》 !== null && $《scol》 !== ''",
+                "col": "《scol》"
+              },
+              "nouse": "pname"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "st-app04-19",
+      "if": "ex-status",
+      "title": "4-3 #34 a：状態を受け取る・絞る（store・update・search のまとまり）",
+      "do": [
+        {
+          "kind": "edit",
+          "pick": "ctl-main",
+          "find": "public function store(",
+          "nouses": true
+        },
+        {
+          "kind": "edit",
+          "pick": "ctl-main",
+          "find": "public function update(",
+          "nouses": true
+        },
+        {
+          "kind": "edit",
+          "pick": "ctl-main",
+          "find": "public function search(",
+          "nouses": true,
+          "if": "pname"
+        }
+      ]
+    },
+    {
+      "id": "st-app04-20",
+      "if": "ex-status",
+      "title": "4-3 #35 a：状態を選ぶ欄（作成・検索・一覧のまとまり）と CSS",
+      "do": [
+        {
+          "kind": "edit",
+          "pick": "view-index",
+          "find": "<form class=\"create-form\""
+        },
+        {
+          "kind": "edit",
+          "pick": "view-index",
+          "find": "<form class=\"search-form\"",
+          "if": "pname"
+        },
+        {
+          "kind": "edit",
+          "pick": "view-index",
+          "find": "<table class=\"list-table__inner\">"
+        },
+        {
+          "kind": "css",
+          "screens": [
+            {
+              "from": "view-index"
+            }
+          ],
+          "only": [
+            "index"
+          ],
+          "mode": "replace"
+        }
+      ]
+    },
+    {
+      "id": "st-app04-21",
+      "if": "ex-status",
+      "title": "4-3 #36 git→確かめる",
+      "do": [
+        {
+          "kind": "cmd",
+          "tag": "cmd-git-add",
+          "set": {
+            "path": "."
+          }
+        },
+        {
+          "kind": "cmd",
+          "tag": "cmd-git-commit",
+          "set": {
+            "msg": "《msg》"
+          }
+        },
+        {
+          "kind": "cmd",
+          "tag": "cmd-git-push",
+          "set": {
+            "branch": "feature/《branch》"
+          }
+        },
+        {
+          "kind": "check",
+          "open": "http://localhost/",
+          "expect": [
+            "状態を選んで作れる（《sopts|col:label》）",
+            "一覧で状態を変えて「《b_update》」で変わる",
+            "状態で探すと、その状態の物だけが並ぶ"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "st-app04-22",
+      "if": "ex-login",
+      "title": "4-4 #37 コマンド：ログインの仕組み（Fortify）を入れる",
+      "do": [
+        {
+          "kind": "cmd",
+          "cmd": "composer require laravel/fortify",
+          "desc": "Fortify の部品を、このアプリに入れる"
+        },
+        {
+          "kind": "cmd",
+          "cmd": "php artisan fortify:install",
+          "desc": "会員登録などの処理（app/Actions/Fortify）・FortifyServiceProvider・config/fortify.php・マイグレーションを作り、bootstrap/providers.php に FortifyServiceProvider を登録する"
+        }
+      ]
+    },
+    {
+      "id": "st-app04-23",
+      "if": "ex-login",
+      "title": "4-4 #38 確かめる：Fortify のプロバイダーが登録された",
+      "do": [
+        {
+          "kind": "check",
+          "open": "bootstrap/providers.php（ファイルを開く）",
+          "expect": [
+            "return [ の中に FortifyServiceProvider::class の行がある（fortify:install が足す）"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "st-app04-24",
+      "if": "ex-login",
+      "title": "4-4 #39 a：ログイン後に開くURL・画面・できること（config/fortify.php）",
+      "do": [
+        {
+          "kind": "edit",
+          "from": "fortify-config",
+          "patch": "ログイン後に開くURL"
+        },
+        {
+          "kind": "edit",
+          "from": "fortify-config",
+          "patch": "画面"
+        },
+        {
+          "kind": "edit",
+          "from": "fortify-config",
+          "patch": "できること"
+        }
+      ]
+    },
+    {
+      "id": "st-app04-25",
+      "if": "ex-login",
+      "title": "4-4 #40 a：ログイン画面・会員登録画面・ログインの確かめ方（FortifyServiceProvider の boot() の中）",
+      "do": [
+        {
+          "kind": "edit",
+          "path": "app/Providers/FortifyServiceProvider.php",
+          "find": "Fortify::createUsersUsing(CreateNewUser::class);",
+          "until": "line",
+          "code": [
+            {
+              "piece": "fortify-boot"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "st-app04-26",
+      "if": "ex-login",
+      "title": "4-4 #41 a：会員登録の決まり（CreateNewUser の決まりのまとまり）",
+      "do": [
+        {
+          "kind": "edit",
+          "path": "app/Actions/Fortify/CreateNewUser.php",
+          "find": "Validator::make($input, [",
+          "code": [
+            {
+              "tag": "php-validator",
+              "set": {
+                "data": "$input"
+              },
+              "kids": [
+                {
+                  "each": "ucols",
+                  "items": [
+                    {
+                      "tag": "php-rq-rule",
+                      "set": {
+                        "field": "《r.name》",
+                        "rules": "《r.rules》"
+                      }
+                    }
+                  ],
+                  "if": "r.rules"
+                }
+              ],
+              "els": [
+                {
+                  "each": "umsgs",
+                  "items": [
+                    {
+                      "tag": "php-rq-msg",
+                      "set": {
+                        "field": "《r.field》",
+                        "rule": "《r.rule》",
+                        "text": "《r.text》"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "nouses": true
+        }
+      ]
+    },
+    {
+      "id": "st-app04-27",
+      "if": "ex-login",
+      "title": "4-4 #42 b 新規：ログイン画面と会員登録画面と CSS",
+      "do": [
+        {
+          "kind": "new",
+          "from": "view-login"
+        },
+        {
+          "kind": "new",
+          "from": "view-register"
+        },
+        {
+          "kind": "css",
+          "screens": [
+            {
+              "from": "view-login"
+            },
+            {
+              "from": "view-register"
+            }
+          ],
+          "only": [
+            "auth"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "st-app04-28",
+      "if": "ex-login",
+      "title": "4-4 #43〜45 コマンド→a 全部→コマンド：持ち主のカラムを足す",
+      "do": [
+        {
+          "kind": "cmd",
+          "cmd": "php artisan make:migration 《own_mg》 --table=《table》",
+          "desc": "テーブル 《table》 にカラムを足す設計図のファイルを作る"
+        },
+        {
+          "kind": "replace",
+          "from": "mg-owner"
+        },
+        {
+          "kind": "cmd",
+          "cmd": "php artisan migrate",
+          "desc": "足したカラムをデータベースに作る。今あるデータは残る"
+        }
+      ]
+    },
+    {
+      "id": "st-app04-29",
+      "if": "ex-login",
+      "title": "4-4 #46 a／b：書き込んでいいカラムの行と、持ち主へのつながり",
+      "do": [
+        {
+          "kind": "edit",
+          "from": "model-main",
+          "patch": "書き込んでいいカラム"
+        },
+        {
+          "kind": "add",
+          "from": "model-main",
+          "at": "class_end",
+          "code": [
+            {
+              "tag": "php-md-belongs",
+              "set": {
+                "name": "user",
+                "model": "User"
+              },
+              "nouse": "pname"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "st-app04-30",
+      "if": "ex-login",
+      "title": "4-4 #47 b：User に子をたくさん持たせる",
+      "do": [
+        {
+          "kind": "add",
+          "from": "user-model",
+          "at": "class_end",
+          "code": [
+            {
+              "tag": "php-md-hasmany",
+              "set": {
+                "name": "《vars》",
+                "model": "《model》"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "st-app04-31",
+      "if": "ex-login",
+      "title": "4-4 #48 a：ログイン中の人の分だけ（index・store・search のまとまり）",
+      "do": [
+        {
+          "kind": "edit",
+          "pick": "ctl-main",
+          "find": "public function index(",
+          "nouses": true
+        },
+        {
+          "kind": "edit",
+          "pick": "ctl-main",
+          "find": "public function store(",
+          "nouses": true
+        },
+        {
+          "kind": "edit",
+          "pick": "ctl-main",
+          "find": "public function search(",
+          "nouses": true,
+          "if": "pname"
+        }
+      ]
+    },
+    {
+      "id": "st-app04-32",
+      "if": "ex-login",
+      "title": "4-4 #49 a：全部のルートをログインした人だけにする",
+      "do": [
+        {
+          "kind": "edit",
+          "pick": "routes-list",
+          "sec": "routes",
+          "path": "routes/web.php",
+          "find": "Route::get('/', [《ctrl》::class, 'index'])",
+          "to": "Route::delete('《purl》/{《pvar》}', [《pctl》::class, 'destroy']);",
+          "nouses": true
+        }
+      ]
+    },
+    {
+      "id": "st-app04-33",
+      "if": "ex-login",
+      "title": "4-4 #50 a：上の帯にログアウトを足す",
+      "do": [
+        {
+          "kind": "edit",
+          "pick": "view-layout",
+          "find": "<header class=\"header\">"
+        }
+      ]
+    },
+    {
+      "id": "st-app04-34",
+      "if": "ex-login",
+      "title": "4-4 #51 git→確かめる",
+      "do": [
+        {
+          "kind": "cmd",
+          "tag": "cmd-git-add",
+          "set": {
+            "path": "."
+          }
+        },
+        {
+          "kind": "cmd",
+          "tag": "cmd-git-commit",
+          "set": {
+            "msg": "《msg》"
+          }
+        },
+        {
+          "kind": "cmd",
+          "tag": "cmd-git-push",
+          "set": {
+            "branch": "feature/《branch》"
+          }
+        },
+        {
+          "kind": "check",
+          "open": "http://localhost/register",
+          "expect": [
+            "会員登録の画面が出る。登録するとトップへ移る",
+            "自分が作った物だけが並ぶ",
+            "前から入っていた 《model》（持ち主が無い物）は一覧に出ない",
+            "「《b_logout》」を押すとログアウトし、トップを開くとログインの画面に移る"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "st-app04-35",
+      "if": "ex-like",
+      "title": "4-5 #52〜54 コマンド→a 全部→コマンド：いいねのテーブル",
+      "do": [
+        {
+          "kind": "cmd",
+          "cmd": "php artisan make:migration 《lmg》",
+          "desc": "テーブル 《ltable》 を作る設計図のファイルを作る"
+        },
+        {
+          "kind": "replace",
+          "from": "mg-like"
+        },
+        {
+          "kind": "cmd",
+          "cmd": "php artisan migrate",
+          "desc": "設計図どおりに、DB にテーブルを作る"
+        }
+      ]
+    },
+    {
+      "id": "st-app04-36",
+      "if": "ex-like",
+      "title": "4-5 #55 b：いいねのつながり（子のモデルと User のクラスの最後）",
+      "do": [
+        {
+          "kind": "add",
+          "from": "model-main",
+          "at": "class_end",
+          "code": [
+            {
+              "tag": "php-md-btm",
+              "set": {
+                "name": "《lrel》",
+                "model": "User",
+                "pivot": "《ltable》",
+                "mine": "《lfk》",
+                "other": "《ofk》"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "add",
+          "from": "user-model",
+          "at": "class_end",
+          "code": [
+            {
+              "tag": "php-md-btm",
+              "set": {
+                "name": "《lrel》",
+                "model": "《model》",
+                "pivot": "《ltable》",
+                "mine": "《ofk》",
+                "other": "《lfk》"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "st-app04-37",
+      "if": "ex-like",
+      "title": "4-5 #56 b：いいねと解除のメソッド（コントローラーのクラスの最後）",
+      "do": [
+        {
+          "kind": "add",
+          "pick": "ctl-main",
+          "find": "public function like(",
+          "at": "class_end",
+          "nouses": true
+        },
+        {
+          "kind": "add",
+          "pick": "ctl-main",
+          "find": "public function unlike(",
+          "at": "class_end",
+          "nouses": true
+        }
+      ]
+    },
+    {
+      "id": "st-app04-38",
+      "if": "ex-like",
+      "title": "4-5 #57 a：いいねのルートを2本足す",
+      "do": [
+        {
+          "kind": "edit",
+          "pick": "routes-list",
+          "sec": "routes",
+          "path": "routes/web.php",
+          "find": "Route::middleware('auth')->group(function () {",
+          "nouses": true
+        }
+      ]
+    },
+    {
+      "id": "st-app04-39",
+      "if": "ex-like",
+      "title": "4-5 #58 a：一覧にいいねと件数を出す（一覧のまとまり）と CSS",
+      "do": [
+        {
+          "kind": "edit",
+          "pick": "view-index",
+          "find": "<table class=\"list-table__inner\">"
+        },
+        {
+          "kind": "css",
+          "screens": [
+            {
+              "from": "view-index"
+            }
+          ],
+          "only": [
+            "index"
+          ],
+          "mode": "replace"
+        }
+      ]
+    },
+    {
+      "id": "st-app04-40",
+      "if": "ex-like",
+      "title": "4-5 #59 git→確かめる",
+      "do": [
+        {
+          "kind": "cmd",
+          "tag": "cmd-git-add",
+          "set": {
+            "path": "."
+          }
+        },
+        {
+          "kind": "cmd",
+          "tag": "cmd-git-commit",
+          "set": {
+            "msg": "《msg》"
+          }
+        },
+        {
+          "kind": "cmd",
+          "tag": "cmd-git-push",
+          "set": {
+            "branch": "feature/《branch》"
+          }
+        },
+        {
+          "kind": "check",
+          "open": "http://localhost/",
+          "expect": [
+            "「《b_like》」を押すと件数が1増え、ボタンが「《b_unlike》」に変わる",
+            "「《b_unlike》」を押すと件数が1減る",
+            "保存が作業のクラウド保管場所に送られている（push まで済む）"
+          ]
+        }
+      ]
+    }
+  ],
+  "pieces": {
+    "mg-parent": {
+      "file": "file-migration",
+      "vals": {
+        "table": "《ptable》",
+        "do": "作る",
+        "file": "《pmg》"
+      },
+      "secs": {
+        "cols": [
+          {
+            "tag": "php-mg-id"
+          },
+          {
+            "each": "pcols",
+            "items": [
+              {
+                "tag": "php-mg-fk",
+                "set": {
+                  "name": "《r.name》",
+                  "null": "《r.null》",
+                  "after": "《r.after》"
+                },
+                "kids": [
+                  {
+                    "tag": "php-mg-cascade",
+                    "if": "r.cascade"
+                  }
+                ],
+                "if": "r.fk"
+              },
+              {
+                "tag": "php-mg-col",
+                "set": {
+                  "name": "《r.name》",
+                  "type": "《r.type》",
+                  "len": "《r.len》"
+                },
+                "kids": [
+                  {
+                    "tag": "php-mg-null",
+                    "if": "r.null"
+                  },
+                  {
+                    "tag": "php-mg-default",
+                    "set": {
+                      "v": "《r.def》"
+                    },
+                    "if": "r.def"
+                  },
+                  {
+                    "tag": "php-mg-uniq",
+                    "if": "r.uniq"
+                  },
+                  {
+                    "tag": "php-mg-after",
+                    "set": {
+                      "col": "《r.after》"
+                    },
+                    "if": "r.after"
+                  }
+                ],
+                "if": "!r.fk"
+              }
+            ]
+          },
+          {
+            "tag": "php-mg-ts"
+          }
+        ]
+      }
+    },
+    "mg-main": {
+      "file": "file-migration",
+      "vals": {
+        "table": "《table》",
+        "do": "作る",
+        "file": "《mg》"
+      },
+      "secs": {
+        "cols": [
+          {
+            "tag": "php-mg-id"
+          },
+          {
+            "each": "cols",
+            "items": [
+              {
+                "tag": "php-mg-fk",
+                "set": {
+                  "name": "《r.name》",
+                  "null": "《r.null》",
+                  "after": "《r.after》"
+                },
+                "kids": [
+                  {
+                    "tag": "php-mg-cascade",
+                    "if": "r.cascade"
+                  }
+                ],
+                "if": "r.fk"
+              },
+              {
+                "tag": "php-mg-col",
+                "set": {
+                  "name": "《r.name》",
+                  "type": "《r.type》",
+                  "len": "《r.len》"
+                },
+                "kids": [
+                  {
+                    "tag": "php-mg-null",
+                    "if": "r.null"
+                  },
+                  {
+                    "tag": "php-mg-default",
+                    "set": {
+                      "v": "《r.def》"
+                    },
+                    "if": "r.def"
+                  },
+                  {
+                    "tag": "php-mg-uniq",
+                    "if": "r.uniq"
+                  },
+                  {
+                    "tag": "php-mg-after",
+                    "set": {
+                      "col": "《r.after》"
+                    },
+                    "if": "r.after"
+                  }
+                ],
+                "if": "!r.fk"
+              }
+            ]
+          },
+          {
+            "tag": "php-mg-ts"
+          }
+        ]
+      }
+    },
+    "model-parent": {
+      "file": "file-model",
+      "vals": {
+        "model": "《pmodel》",
+        "base": "Model",
+        "fillable": "《pcols|col:name》",
+        "factory": "使わない"
+      },
+      "secs": {
+        "rels": []
+      }
+    },
+    "model-main": {
+      "file": "file-model",
+      "vals": {
+        "model": "《model》",
+        "base": "Model",
+        "fillable": [
+          {
+            "t": "《cols|col:name》"
+          },
+          {
+            "if": "done_img",
+            "t": ", 《icol》"
+          },
+          {
+            "if": "done_status",
+            "t": ", 《scols|col:name》"
+          },
+          {
+            "if": "done_login",
+            "t": ", 《ofk》"
+          }
+        ],
+        "factory": [
+          {
+            "if": "pname",
+            "t": "使う"
+          },
+          {
+            "if": "!pname",
+            "t": "使わない"
+          }
+        ]
+      },
+      "secs": {
+        "rels": [
+          {
+            "tag": "php-md-belongs",
+            "set": {
+              "name": "《prel》",
+              "model": "《pmodel》"
+            },
+            "if": "pname"
+          },
+          {
+            "tag": "php-md-belongs",
+            "set": {
+              "name": "user",
+              "model": "User"
+            },
+            "if": "done_login"
+          },
+          {
+            "tag": "php-md-btm",
+            "set": {
+              "name": "《lrel》",
+              "model": "User",
+              "pivot": "《ltable》",
+              "mine": "《lfk》",
+              "other": "《ofk》"
+            },
+            "if": "done_like"
+          },
+          {
+            "tag": "php-md-scope",
+            "set": {
+              "name": "《pmodel》Search",
+              "var": "《fk》",
+              "col": "《fk》",
+              "op": "同じ"
+            },
+            "if": "pname"
+          },
+          {
+            "tag": "php-md-scope",
+            "set": {
+              "name": "KeywordSearch",
+              "var": "keyword",
+              "col": "《kcol》",
+              "op": "含む"
+            },
+            "if": "pname"
+          },
+          {
+            "tag": "php-md-scope-cond",
+            "set": {
+              "name": "StatusSearch",
+              "var": "《scol》",
+              "cond": "$《scol》 !== null && $《scol》 !== ''",
+              "col": "《scol》"
+            },
+            "if": "done_status"
+          }
+        ]
+      }
+    },
+    "req-main": {
+      "file": "file-request",
+      "vals": {
+        "name": "《req》",
+        "who": "誰でも"
+      },
+      "secs": {
+        "rules": [
+          {
+            "each": "cols",
+            "items": [
+              {
+                "tag": "php-rq-rule",
+                "set": {
+                  "field": "《r.name》",
+                  "rules": "《r.rules》"
+                }
+              }
+            ],
+            "if": "r.rules"
+          }
+        ],
+        "msgs": [
+          {
+            "each": "msgs",
+            "items": [
+              {
+                "tag": "php-rq-msg",
+                "set": {
+                  "field": "《r.field》",
+                  "rule": "《r.rule》",
+                  "text": "《r.text》"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "req-parent": {
+      "file": "file-request",
+      "vals": {
+        "name": "《preq》",
+        "who": "誰でも"
+      },
+      "secs": {
+        "rules": [
+          {
+            "each": "pcols",
+            "items": [
+              {
+                "tag": "php-rq-rule",
+                "set": {
+                  "field": "《r.name》",
+                  "rules": "《r.rules》"
+                }
+              }
+            ],
+            "if": "r.rules"
+          }
+        ],
+        "msgs": [
+          {
+            "each": "pmsgs",
+            "items": [
+              {
+                "tag": "php-rq-msg",
+                "set": {
+                  "field": "《r.field》",
+                  "rule": "《r.rule》",
+                  "text": "《r.text》"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "ctl-main": {
+      "file": "file-controller",
+      "vals": {
+        "controller": "《ctrl》",
+        "models": [
+          {
+            "t": "《model》"
+          },
+          {
+            "if": "pname",
+            "t": ", 《pmodel》"
+          }
+        ],
+        "requests": "《req》"
+      },
+      "secs": {
+        "methods": [
+          {
+            "tag": "php-method",
+            "set": {
+              "name": "index"
+            },
+            "kids": [
+              {
+                "tag": "php-query",
+                "set": {
+                  "var": "《vars》",
+                  "model": "《model》"
+                },
+                "kids": [
+                  {
+                    "tag": "php-with",
+                    "set": {
+                      "rels": "《prel》"
+                    },
+                    "if": "pname"
+                  },
+                  {
+                    "tag": "php-where",
+                    "set": {
+                      "col": "《ofk》",
+                      "op": "同じ",
+                      "val": "auth()->id()"
+                    },
+                    "if": "done_login"
+                  },
+                  {
+                    "tag": "php-get",
+                    "set": {
+                      "how": "全部"
+                    }
+                  }
+                ],
+                "if": "pname|done_login"
+              },
+              {
+                "if": [
+                  "!pname",
+                  "!done_login"
+                ],
+                "tag": "php-all",
+                "set": {
+                  "var": "《vars》",
+                  "model": "《model》"
+                }
+              },
+              {
+                "tag": "php-all",
+                "set": {
+                  "var": "《pvars》",
+                  "model": "《pmodel》"
+                },
+                "if": "pname"
+              },
+              {
+                "tag": "php-return-view",
+                "set": {
+                  "view": "《view》",
+                  "vars": [
+                    {
+                      "t": "《vars》"
+                    },
+                    {
+                      "if": "pname",
+                      "t": ", 《pvars》"
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "tag": "php-method",
+            "set": {
+              "name": "store",
+              "arg": "《req》 $request"
+            },
+            "kids": [
+              {
+                "tag": "php-only",
+                "set": {
+                  "var": "《var》",
+                  "fields": [
+                    {
+                      "t": "《cols|has:input|col:name》"
+                    },
+                    {
+                      "if": "done_status",
+                      "t": ", 《scols|has:input|col:name》"
+                    }
+                  ]
+                }
+              },
+              {
+                "tag": "php-if",
+                "set": {
+                  "cond": "$request->hasFile('《ifield》')"
+                },
+                "kids": [
+                  {
+                    "tag": "php-file",
+                    "set": {
+                      "var": "《var》['《icol》']",
+                      "field": "《ifield》",
+                      "dir": "《idir》"
+                    }
+                  }
+                ],
+                "if": "done_img"
+              },
+              {
+                "tag": "php-set",
+                "set": {
+                  "var": "《var》",
+                  "key": "《ofk》",
+                  "val": "auth()->id()"
+                },
+                "if": "done_login"
+              },
+              {
+                "tag": "php-create",
+                "set": {
+                  "model": "《model》",
+                  "data": "$《var》"
+                }
+              },
+              {
+                "tag": "php-redirect-url",
+                "set": {
+                  "url": "/"
+                },
+                "kids": [
+                  {
+                    "tag": "php-flash",
+                    "set": {
+                      "key": "message",
+                      "text": "《f_store》"
+                    },
+                    "if": "f_store"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "tag": "php-method",
+            "set": {
+              "name": "update",
+              "arg": "《req》 $request, 《model》 $《var》"
+            },
+            "kids": [
+              {
+                "tag": "php-update",
+                "set": {
+                  "var": "《var》",
+                  "data": [
+                    "$request->only([",
+                    {
+                      "t": "《cols|has:upd|col:name|quote_list》"
+                    },
+                    {
+                      "if": "done_status",
+                      "t": ", 《scols|col:name|quote_list》"
+                    },
+                    "])"
+                  ]
+                }
+              },
+              {
+                "tag": "php-redirect-url",
+                "set": {
+                  "url": "/"
+                },
+                "kids": [
+                  {
+                    "tag": "php-flash",
+                    "set": {
+                      "key": "message",
+                      "text": "《f_update》"
+                    },
+                    "if": "f_update"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "tag": "php-method",
+            "set": {
+              "name": "destroy",
+              "arg": "《model》 $《var》"
+            },
+            "kids": [
+              {
+                "tag": "php-delete",
+                "set": {
+                  "var": "《var》"
+                }
+              },
+              {
+                "tag": "php-redirect-url",
+                "set": {
+                  "url": "/"
+                },
+                "kids": [
+                  {
+                    "tag": "php-flash",
+                    "set": {
+                      "key": "message",
+                      "text": "《f_delete》"
+                    },
+                    "if": "f_delete"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "tag": "php-method",
+            "set": {
+              "name": "search",
+              "arg": "Request $request"
+            },
+            "kids": [
+              {
+                "tag": "php-query",
+                "set": {
+                  "var": "《vars》",
+                  "model": "《model》"
+                },
+                "kids": [
+                  {
+                    "tag": "php-with",
+                    "set": {
+                      "rels": "《prel》"
+                    },
+                    "if": "pname"
+                  },
+                  {
+                    "tag": "php-where",
+                    "set": {
+                      "col": "《ofk》",
+                      "op": "同じ",
+                      "val": "auth()->id()"
+                    },
+                    "if": "done_login"
+                  },
+                  {
+                    "tag": "php-scope-call",
+                    "set": {
+                      "name": "《pmodel》Search",
+                      "val": "$request->《fk》"
+                    }
+                  },
+                  {
+                    "tag": "php-scope-call",
+                    "set": {
+                      "name": "KeywordSearch",
+                      "val": "$request->keyword"
+                    }
+                  },
+                  {
+                    "tag": "php-scope-call",
+                    "set": {
+                      "name": "StatusSearch",
+                      "val": "$request->《scol》"
+                    },
+                    "if": "done_status"
+                  },
+                  {
+                    "tag": "php-get",
+                    "set": {
+                      "how": "全部"
+                    }
+                  }
+                ],
+                "if": "pname|done_login"
+              },
+              {
+                "if": [
+                  "!pname",
+                  "!done_login"
+                ],
+                "tag": "php-all",
+                "set": {
+                  "var": "《vars》",
+                  "model": "《model》"
+                }
+              },
+              {
+                "tag": "php-all",
+                "set": {
+                  "var": "《pvars》",
+                  "model": "《pmodel》"
+                }
+              },
+              {
+                "tag": "php-return-view",
+                "set": {
+                  "view": "《view》",
+                  "vars": [
+                    {
+                      "t": "《vars》"
+                    },
+                    {
+                      "if": "pname",
+                      "t": ", 《pvars》"
+                    }
+                  ]
+                }
+              }
+            ],
+            "if": "pname"
+          },
+          {
+            "tag": "php-method",
+            "set": {
+              "name": "like",
+              "arg": "《model》 $《var》"
+            },
+            "kids": [
+              {
+                "tag": "php-attach",
+                "set": {
+                  "var": "《var》",
+                  "rel": "《lrel》",
+                  "id": "auth()->id()"
+                }
+              },
+              {
+                "tag": "php-redirect-url",
+                "set": {
+                  "url": "/"
+                },
+                "kids": [
+                  {
+                    "tag": "php-flash",
+                    "set": {
+                      "key": "message",
+                      "text": "《f_like》"
+                    },
+                    "if": "f_like"
+                  }
+                ]
+              }
+            ],
+            "if": "done_like"
+          },
+          {
+            "tag": "php-method",
+            "set": {
+              "name": "unlike",
+              "arg": "《model》 $《var》"
+            },
+            "kids": [
+              {
+                "tag": "php-detach",
+                "set": {
+                  "var": "《var》",
+                  "rel": "《lrel》",
+                  "id": "auth()->id()"
+                }
+              },
+              {
+                "tag": "php-redirect-url",
+                "set": {
+                  "url": "/"
+                },
+                "kids": [
+                  {
+                    "tag": "php-flash",
+                    "set": {
+                      "key": "message",
+                      "text": "《f_unlike》"
+                    },
+                    "if": "f_unlike"
+                  }
+                ]
+              }
+            ],
+            "if": "done_like"
+          }
+        ]
+      }
+    },
+    "ctl-parent": {
+      "file": "file-controller",
+      "vals": {
+        "controller": "《pctl》",
+        "models": "《pmodel》",
+        "requests": "《preq》"
+      },
+      "secs": {
+        "methods": [
+          {
+            "tag": "php-method",
+            "set": {
+              "name": "index"
+            },
+            "kids": [
+              {
+                "tag": "php-all",
+                "set": {
+                  "var": "《pvars》",
+                  "model": "《pmodel》"
+                }
+              },
+              {
+                "tag": "php-return-view",
+                "set": {
+                  "view": "《pview》",
+                  "vars": "《pvars》"
+                }
+              }
+            ]
+          },
+          {
+            "tag": "php-method",
+            "set": {
+              "name": "store",
+              "arg": "《preq》 $request"
+            },
+            "kids": [
+              {
+                "tag": "php-only",
+                "set": {
+                  "var": "《pvar》",
+                  "fields": "《pcols|has:input|col:name》"
+                }
+              },
+              {
+                "tag": "php-create",
+                "set": {
+                  "model": "《pmodel》",
+                  "data": "$《pvar》"
+                }
+              },
+              {
+                "tag": "php-redirect-url",
+                "set": {
+                  "url": "《purl》"
+                },
+                "kids": [
+                  {
+                    "tag": "php-flash",
+                    "set": {
+                      "key": "message",
+                      "text": "《pf_store》"
+                    },
+                    "if": "pf_store"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "tag": "php-method",
+            "set": {
+              "name": "update",
+              "arg": "《preq》 $request, 《pmodel》 $《pvar》"
+            },
+            "kids": [
+              {
+                "tag": "php-update",
+                "set": {
+                  "var": "《pvar》",
+                  "data": "$request->only([《pcols|has:upd|col:name|quote_list》])"
+                }
+              },
+              {
+                "tag": "php-redirect-url",
+                "set": {
+                  "url": "《purl》"
+                },
+                "kids": [
+                  {
+                    "tag": "php-flash",
+                    "set": {
+                      "key": "message",
+                      "text": "《pf_update》"
+                    },
+                    "if": "pf_update"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "tag": "php-method",
+            "set": {
+              "name": "destroy",
+              "arg": "《pmodel》 $《pvar》"
+            },
+            "kids": [
+              {
+                "tag": "php-delete",
+                "set": {
+                  "var": "《pvar》"
+                }
+              },
+              {
+                "tag": "php-redirect-url",
+                "set": {
+                  "url": "《purl》"
+                },
+                "kids": [
+                  {
+                    "tag": "php-flash",
+                    "set": {
+                      "key": "message",
+                      "text": "《pf_delete》"
+                    },
+                    "if": "pf_delete"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "routes-list": {
+      "file": "file-route",
+      "vals": {
+        "file": "web"
+      },
+      "secs": {
+        "routes": [
+          {
+            "tag": "php-rt-one",
+            "set": {
+              "verb": "get",
+              "path": "/",
+              "controller": "《ctrl》",
+              "method": "index",
+              "who": [
+                {
+                  "if": "done_login",
+                  "t": "ログインした人"
+                },
+                {
+                  "if": "!done_login",
+                  "t": "誰でも"
+                }
+              ],
+              "name": "《rname》"
+            }
+          },
+          {
+            "tag": "php-rt-one",
+            "set": {
+              "verb": "post",
+              "path": "《url》",
+              "controller": "《ctrl》",
+              "method": "store",
+              "who": [
+                {
+                  "if": "done_login",
+                  "t": "ログインした人"
+                },
+                {
+                  "if": "!done_login",
+                  "t": "誰でも"
+                }
+              ]
+            }
+          },
+          {
+            "tag": "php-rt-one",
+            "set": {
+              "verb": "patch",
+              "path": "《url》/{《var》}",
+              "controller": "《ctrl》",
+              "method": "update",
+              "who": [
+                {
+                  "if": "done_login",
+                  "t": "ログインした人"
+                },
+                {
+                  "if": "!done_login",
+                  "t": "誰でも"
+                }
+              ]
+            }
+          },
+          {
+            "tag": "php-rt-one",
+            "set": {
+              "verb": "delete",
+              "path": "《url》/{《var》}",
+              "controller": "《ctrl》",
+              "method": "destroy",
+              "who": [
+                {
+                  "if": "done_login",
+                  "t": "ログインした人"
+                },
+                {
+                  "if": "!done_login",
+                  "t": "誰でも"
+                }
+              ]
+            }
+          },
+          {
+            "tag": "php-rt-one",
+            "set": {
+              "verb": "get",
+              "path": "《url》/search",
+              "controller": "《ctrl》",
+              "method": "search",
+              "who": [
+                {
+                  "if": "done_login",
+                  "t": "ログインした人"
+                },
+                {
+                  "if": "!done_login",
+                  "t": "誰でも"
+                }
+              ]
+            },
+            "if": "pname"
+          },
+          {
+            "tag": "php-rt-one",
+            "set": {
+              "verb": "get",
+              "path": "《purl》",
+              "controller": "《pctl》",
+              "method": "index",
+              "who": [
+                {
+                  "if": "done_login",
+                  "t": "ログインした人"
+                },
+                {
+                  "if": "!done_login",
+                  "t": "誰でも"
+                }
+              ]
+            },
+            "if": "pname"
+          },
+          {
+            "tag": "php-rt-one",
+            "set": {
+              "verb": "post",
+              "path": "《purl》",
+              "controller": "《pctl》",
+              "method": "store",
+              "who": [
+                {
+                  "if": "done_login",
+                  "t": "ログインした人"
+                },
+                {
+                  "if": "!done_login",
+                  "t": "誰でも"
+                }
+              ]
+            },
+            "if": "pname"
+          },
+          {
+            "tag": "php-rt-one",
+            "set": {
+              "verb": "patch",
+              "path": "《purl》/{《pvar》}",
+              "controller": "《pctl》",
+              "method": "update",
+              "who": [
+                {
+                  "if": "done_login",
+                  "t": "ログインした人"
+                },
+                {
+                  "if": "!done_login",
+                  "t": "誰でも"
+                }
+              ]
+            },
+            "if": "pname"
+          },
+          {
+            "tag": "php-rt-one",
+            "set": {
+              "verb": "delete",
+              "path": "《purl》/{《pvar》}",
+              "controller": "《pctl》",
+              "method": "destroy",
+              "who": [
+                {
+                  "if": "done_login",
+                  "t": "ログインした人"
+                },
+                {
+                  "if": "!done_login",
+                  "t": "誰でも"
+                }
+              ]
+            },
+            "if": "pname"
+          },
+          {
+            "tag": "php-rt-one",
+            "set": {
+              "verb": "post",
+              "path": "《url》/{《var》}/like",
+              "controller": "《ctrl》",
+              "method": "like",
+              "who": [
+                {
+                  "if": "done_login",
+                  "t": "ログインした人"
+                },
+                {
+                  "if": "!done_login",
+                  "t": "誰でも"
+                }
+              ]
+            },
+            "if": "done_like"
+          },
+          {
+            "tag": "php-rt-one",
+            "set": {
+              "verb": "delete",
+              "path": "《url》/{《var》}/like",
+              "controller": "《ctrl》",
+              "method": "unlike",
+              "who": [
+                {
+                  "if": "done_login",
+                  "t": "ログインした人"
+                },
+                {
+                  "if": "!done_login",
+                  "t": "誰でも"
+                }
+              ]
+            },
+            "if": "done_like"
+          }
+        ]
+      }
+    },
+    "view-layout": {
+      "file": "file-blade",
+      "vals": {
+        "view": "layouts.app",
+        "layout": ""
+      },
+      "secs": {
+        "body": [
+          {
+            "tag": "blade-doctype"
+          },
+          {
+            "tag": "blade-open",
+            "set": {
+              "el": "html",
+              "attrs": "lang=\"ja\""
+            },
+            "kids": [
+              {
+                "tag": "blade-open",
+                "set": {
+                  "el": "head"
+                },
+                "kids": [
+                  {
+                    "tag": "blade-void",
+                    "set": {
+                      "el": "meta",
+                      "attrs": "charset=\"UTF-8\""
+                    }
+                  },
+                  {
+                    "tag": "blade-void",
+                    "set": {
+                      "el": "meta",
+                      "attrs": "name=\"viewport\" content=\"width=device-width, initial-scale=1.0\""
+                    }
+                  },
+                  {
+                    "tag": "blade-inline",
+                    "set": {
+                      "el": "title",
+                      "attrs": "",
+                      "inner": "《title》"
+                    }
+                  },
+                  {
+                    "tag": "blade-css",
+                    "set": {
+                      "file": "sanitize.css"
+                    }
+                  },
+                  {
+                    "tag": "blade-css",
+                    "set": {
+                      "file": "common.css"
+                    }
+                  },
+                  {
+                    "tag": "blade-yield",
+                    "set": {
+                      "name": "css"
+                    }
+                  }
+                ]
+              },
+              {
+                "tag": "blade-open",
+                "set": {
+                  "el": "body"
+                },
+                "kids": [
+                  {
+                    "tag": "blade-header",
+                    "kids": [
+                      {
+                        "tag": "blade-open",
+                        "set": {
+                          "el": "div",
+                          "attrs": "class=\"header__logo\""
+                        },
+                        "kids": [
+                          {
+                            "tag": "blade-inline",
+                            "set": {
+                              "el": "a",
+                              "attrs": "href=\"/\"",
+                              "inner": "《logo》"
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "tag": "blade-open",
+                        "set": {
+                          "el": "nav",
+                          "attrs": "class=\"header__nav\""
+                        },
+                        "kids": [
+                          {
+                            "tag": "blade-inline",
+                            "set": {
+                              "el": "a",
+                              "attrs": "href=\"《purl》\"",
+                              "inner": "《nav_parent》"
+                            },
+                            "if": "pname"
+                          },
+                          {
+                            "tag": "blade-if",
+                            "set": {
+                              "cond": "Auth::check()"
+                            },
+                            "kids": [
+                              {
+                                "tag": "blade-open",
+                                "set": {
+                                  "el": "form",
+                                  "attrs": "action=\"/logout\" method=\"POST\""
+                                },
+                                "kids": [
+                                  {
+                                    "tag": "blade-csrf"
+                                  },
+                                  {
+                                    "tag": "blade-inline",
+                                    "set": {
+                                      "el": "button",
+                                      "attrs": "type=\"submit\"",
+                                      "inner": "《b_logout》"
+                                    }
+                                  }
+                                ]
+                              }
+                            ],
+                            "if": "done_login"
+                          },
+                          {
+                            "tag": "blade-yield",
+                            "set": {
+                              "name": "header-button"
+                            },
+                            "if": "done_login"
+                          }
+                        ],
+                        "if": "pname|done_login"
+                      }
+                    ]
+                  },
+                  {
+                    "tag": "blade-open",
+                    "set": {
+                      "el": "main",
+                      "attrs": "class=\"main\""
+                    },
+                    "kids": [
+                      {
+                        "tag": "blade-yield",
+                        "set": {
+                          "name": "content"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "view-index": {
+      "file": "file-blade",
+      "vals": {
+        "view": "《view》",
+        "layout": "layouts.app"
+      },
+      "secs": {
+        "body": [
+          {
+            "tag": "blade-section",
+            "set": {
+              "name": "css"
+            },
+            "kids": [
+              {
+                "tag": "blade-css",
+                "set": {
+                  "file": "《view》.css"
+                }
+              }
+            ]
+          },
+          {
+            "tag": "blade-section",
+            "set": {
+              "name": "content"
+            },
+            "kids": [
+              {
+                "tag": "blade-alert"
+              },
+              {
+                "tag": "blade-open",
+                "set": {
+                  "el": "div",
+                  "attrs": "class=\"《name》__content\""
+                },
+                "kids": [
+                  {
+                    "tag": "blade-form",
+                    "set": {
+                      "cls": "create-form",
+                      "action": "《url》",
+                      "method": "POST",
+                      "look": "form-row",
+                      "file": [
+                        {
+                          "if": "done_img",
+                          "t": "送る"
+                        }
+                      ]
+                    },
+                    "kids": [
+                      {
+                        "tag": "blade-csrf"
+                      },
+                      {
+                        "tag": "blade-open",
+                        "set": {
+                          "el": "div",
+                          "attrs": "class=\"create-form__item\""
+                        },
+                        "kids": [
+                          {
+                            "each": "cols",
+                            "items": [
+                              {
+                                "if": [
+                                  "r.input",
+                                  "r.input!=textarea",
+                                  "r.input!=select"
+                                ],
+                                "tag": "blade-input",
+                                "set": {
+                                  "attrs": "class=\"create-form__item-input\" type=\"《r.input》\" name=\"《r.name》\" value=\"{{ old('《r.name》') }}\""
+                                }
+                              },
+                              {
+                                "if": "r.input=textarea",
+                                "tag": "blade-inline",
+                                "set": {
+                                  "el": "textarea",
+                                  "attrs": "class=\"create-form__item-input\" name=\"《r.name》\"",
+                                  "inner": "{{ old('《r.name》') }}"
+                                }
+                              },
+                              {
+                                "if": "r.input=select",
+                                "tag": "blade-open",
+                                "set": {
+                                  "el": "select",
+                                  "attrs": "class=\"create-form__item-select\" name=\"《r.name》\""
+                                },
+                                "kids": [
+                                  {
+                                    "tag": "blade-foreach",
+                                    "set": {
+                                      "list": "$《pvars》",
+                                      "item": "$《pvar》"
+                                    },
+                                    "kids": [
+                                      {
+                                        "tag": "blade-inline",
+                                        "set": {
+                                          "el": "option",
+                                          "attrs": "value=\"{{ $《pvar》->id }}\"",
+                                          "inner": "{{ $《pvar》->《plabel》 }}"
+                                        }
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          },
+                          {
+                            "tag": "blade-input",
+                            "set": {
+                              "attrs": "type=\"file\" name=\"《ifield》\""
+                            },
+                            "if": "done_img"
+                          },
+                          {
+                            "tag": "blade-open",
+                            "set": {
+                              "el": "select",
+                              "attrs": "class=\"create-form__item-select\" name=\"《scol》\""
+                            },
+                            "kids": [
+                              {
+                                "each": "sopts",
+                                "items": [
+                                  {
+                                    "tag": "blade-inline",
+                                    "set": {
+                                      "el": "option",
+                                      "attrs": "value=\"《r.v》\"",
+                                      "inner": "《r.label》"
+                                    }
+                                  }
+                                ]
+                              }
+                            ],
+                            "if": "done_status"
+                          }
+                        ]
+                      },
+                      {
+                        "tag": "blade-open",
+                        "set": {
+                          "el": "div",
+                          "attrs": "class=\"create-form__button\""
+                        },
+                        "kids": [
+                          {
+                            "tag": "blade-inline",
+                            "set": {
+                              "el": "button",
+                              "attrs": "class=\"create-form__button-submit\" type=\"submit\"",
+                              "inner": "《b_create》"
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "tag": "blade-form",
+                    "set": {
+                      "cls": "search-form",
+                      "action": "《url》/search",
+                      "method": "GET",
+                      "look": "form-row"
+                    },
+                    "kids": [
+                      {
+                        "tag": "blade-open",
+                        "set": {
+                          "el": "div",
+                          "attrs": "class=\"search-form__item\""
+                        },
+                        "kids": [
+                          {
+                            "tag": "blade-input",
+                            "set": {
+                              "attrs": "class=\"search-form__item-input\" type=\"text\" name=\"keyword\" value=\"{{ request('keyword') }}\""
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "tag": "blade-open",
+                        "set": {
+                          "el": "select",
+                          "attrs": "class=\"search-form__item-select\" name=\"《fk》\""
+                        },
+                        "kids": [
+                          {
+                            "tag": "blade-inline",
+                            "set": {
+                              "el": "option",
+                              "attrs": "value=\"\"",
+                              "inner": "《all_label》"
+                            }
+                          },
+                          {
+                            "tag": "blade-foreach",
+                            "set": {
+                              "list": "$《pvars》",
+                              "item": "$《pvar》"
+                            },
+                            "kids": [
+                              {
+                                "tag": "blade-inline",
+                                "set": {
+                                  "el": "option",
+                                  "attrs": "value=\"{{ $《pvar》->id }}\"",
+                                  "inner": "{{ $《pvar》->《plabel》 }}"
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "tag": "blade-open",
+                        "set": {
+                          "el": "select",
+                          "attrs": "class=\"search-form__item-select\" name=\"《scol》\""
+                        },
+                        "kids": [
+                          {
+                            "tag": "blade-inline",
+                            "set": {
+                              "el": "option",
+                              "attrs": "value=\"\"",
+                              "inner": "《all_label》"
+                            }
+                          },
+                          {
+                            "each": "sopts",
+                            "items": [
+                              {
+                                "tag": "blade-inline",
+                                "set": {
+                                  "el": "option",
+                                  "attrs": "value=\"《r.v》\"",
+                                  "inner": "《r.label》"
+                                }
+                              }
+                            ]
+                          }
+                        ],
+                        "if": "done_status"
+                      },
+                      {
+                        "tag": "blade-open",
+                        "set": {
+                          "el": "div",
+                          "attrs": "class=\"search-form__button\""
+                        },
+                        "kids": [
+                          {
+                            "tag": "blade-inline",
+                            "set": {
+                              "el": "button",
+                              "attrs": "class=\"search-form__button-submit\" type=\"submit\"",
+                              "inner": "《b_search》"
+                            }
+                          }
+                        ]
+                      }
+                    ],
+                    "if": "pname"
+                  },
+                  {
+                    "tag": "blade-table",
+                    "set": {
+                      "cls": "list-table__inner"
+                    },
+                    "kids": [
+                      {
+                        "tag": "blade-open",
+                        "set": {
+                          "el": "tr",
+                          "attrs": "class=\"list-table__row\""
+                        },
+                        "kids": [
+                          {
+                            "tag": "blade-inline",
+                            "set": {
+                              "el": "th",
+                              "attrs": "class=\"list-table__header\"",
+                              "inner": "《t_head》"
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "tag": "blade-foreach",
+                        "set": {
+                          "list": "$《vars》",
+                          "item": "$《var》"
+                        },
+                        "kids": [
+                          {
+                            "tag": "blade-open",
+                            "set": {
+                              "el": "tr",
+                              "attrs": "class=\"list-table__row\""
+                            },
+                            "kids": [
+                              {
+                                "tag": "blade-open",
+                                "set": {
+                                  "el": "td",
+                                  "attrs": "class=\"list-table__item\""
+                                },
+                                "kids": [
+                                  {
+                                    "tag": "blade-form",
+                                    "set": {
+                                      "cls": "update-form",
+                                      "action": "《url》/{{ $《var》->id }}",
+                                      "method": "POST",
+                                      "look": "form-inline"
+                                    },
+                                    "kids": [
+                                      {
+                                        "tag": "blade-method",
+                                        "set": {
+                                          "verb": "PATCH"
+                                        }
+                                      },
+                                      {
+                                        "tag": "blade-csrf"
+                                      },
+                                      {
+                                        "tag": "blade-open",
+                                        "set": {
+                                          "el": "div",
+                                          "attrs": "class=\"update-form__item\""
+                                        },
+                                        "kids": [
+                                          {
+                                            "each": "cols",
+                                            "items": [
+                                              {
+                                                "tag": "blade-input",
+                                                "set": {
+                                                  "attrs": "class=\"update-form__item-input\" type=\"text\" name=\"《r.name》\" value=\"{{ $《var》->《r.name》 }}\""
+                                                }
+                                              }
+                                            ],
+                                            "if": "r.upd"
+                                          },
+                                          {
+                                            "tag": "blade-inline",
+                                            "set": {
+                                              "el": "p",
+                                              "attrs": "",
+                                              "inner": "{{ $《var》->《prel》->《plabel》 }}"
+                                            },
+                                            "if": "pname"
+                                          },
+                                          {
+                                            "tag": "blade-if",
+                                            "set": {
+                                              "cond": "$《var》->《icol》"
+                                            },
+                                            "kids": [
+                                              {
+                                                "tag": "blade-img",
+                                                "set": {
+                                                  "attrs": "class=\"list-table__item-img\" src=\"{{ asset('storage/' . $《var》->《icol》) }}\" alt=\"\""
+                                                }
+                                              }
+                                            ],
+                                            "if": "done_img"
+                                          },
+                                          {
+                                            "tag": "blade-open",
+                                            "set": {
+                                              "el": "select",
+                                              "attrs": "class=\"update-form__item-select\" name=\"《scol》\""
+                                            },
+                                            "kids": [
+                                              {
+                                                "each": "sopts",
+                                                "items": [
+                                                  {
+                                                    "tag": "blade-inline",
+                                                    "set": {
+                                                      "el": "option",
+                                                      "attrs": "value=\"《r.v》\" {{ $《var》->《scol》 == 《r.v》 ? 'selected' : '' }}",
+                                                      "inner": "《r.label》"
+                                                    }
+                                                  }
+                                                ]
+                                              }
+                                            ],
+                                            "if": "done_status"
+                                          }
+                                        ]
+                                      },
+                                      {
+                                        "tag": "blade-open",
+                                        "set": {
+                                          "el": "div",
+                                          "attrs": "class=\"update-form__button\""
+                                        },
+                                        "kids": [
+                                          {
+                                            "tag": "blade-inline",
+                                            "set": {
+                                              "el": "button",
+                                              "attrs": "class=\"update-form__button-submit\" type=\"submit\"",
+                                              "inner": "《b_update》"
+                                            }
+                                          }
+                                        ]
+                                      }
+                                    ]
+                                  }
+                                ]
+                              },
+                              {
+                                "tag": "blade-open",
+                                "set": {
+                                  "el": "td",
+                                  "attrs": "class=\"list-table__item\""
+                                },
+                                "kids": [
+                                  {
+                                    "tag": "blade-form",
+                                    "set": {
+                                      "cls": "delete-form",
+                                      "action": "《url》/{{ $《var》->id }}",
+                                      "method": "POST",
+                                      "look": "form-inline"
+                                    },
+                                    "kids": [
+                                      {
+                                        "tag": "blade-method",
+                                        "set": {
+                                          "verb": "DELETE"
+                                        }
+                                      },
+                                      {
+                                        "tag": "blade-csrf"
+                                      },
+                                      {
+                                        "tag": "blade-open",
+                                        "set": {
+                                          "el": "div",
+                                          "attrs": "class=\"delete-form__button\""
+                                        },
+                                        "kids": [
+                                          {
+                                            "tag": "blade-inline",
+                                            "set": {
+                                              "el": "button",
+                                              "attrs": "class=\"delete-form__button-submit\" type=\"submit\"",
+                                              "inner": "《b_delete》"
+                                            }
+                                          }
+                                        ]
+                                      }
+                                    ]
+                                  },
+                                  {
+                                    "tag": "blade-if",
+                                    "set": {
+                                      "cond": "$《var》->《lrel》->contains('id', auth()->id())"
+                                    },
+                                    "kids": [
+                                      {
+                                        "tag": "blade-form",
+                                        "set": {
+                                          "cls": "like-form",
+                                          "action": "《url》/{{ $《var》->id }}/like",
+                                          "method": "POST",
+                                          "look": "form-inline"
+                                        },
+                                        "kids": [
+                                          {
+                                            "tag": "blade-csrf"
+                                          },
+                                          {
+                                            "tag": "blade-method",
+                                            "set": {
+                                              "verb": "DELETE"
+                                            }
+                                          },
+                                          {
+                                            "tag": "blade-inline",
+                                            "set": {
+                                              "el": "button",
+                                              "attrs": "class=\"like-form__button-submit\" type=\"submit\"",
+                                              "inner": "《b_unlike》"
+                                            }
+                                          }
+                                        ]
+                                      }
+                                    ],
+                                    "if": "done_like",
+                                    "els": [
+                                      {
+                                        "tag": "blade-form",
+                                        "set": {
+                                          "cls": "like-form",
+                                          "action": "《url》/{{ $《var》->id }}/like",
+                                          "method": "POST",
+                                          "look": "form-inline"
+                                        },
+                                        "kids": [
+                                          {
+                                            "tag": "blade-csrf"
+                                          },
+                                          {
+                                            "tag": "blade-inline",
+                                            "set": {
+                                              "el": "button",
+                                              "attrs": "class=\"like-form__button-submit\" type=\"submit\"",
+                                              "inner": "《b_like》"
+                                            }
+                                          }
+                                        ]
+                                      }
+                                    ]
+                                  },
+                                  {
+                                    "tag": "blade-inline",
+                                    "set": {
+                                      "el": "p",
+                                      "attrs": "",
+                                      "inner": "{{ $《var》->《lrel》->count() }}《t_count》"
+                                    },
+                                    "if": "done_like"
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "view-parent": {
+      "file": "file-blade",
+      "vals": {
+        "view": "《pview》",
+        "layout": "layouts.app"
+      },
+      "secs": {
+        "body": [
+          {
+            "tag": "blade-section",
+            "set": {
+              "name": "css"
+            },
+            "kids": [
+              {
+                "tag": "blade-css",
+                "set": {
+                  "file": "《pview》.css"
+                }
+              }
+            ]
+          },
+          {
+            "tag": "blade-section",
+            "set": {
+              "name": "content"
+            },
+            "kids": [
+              {
+                "tag": "blade-alert"
+              },
+              {
+                "tag": "blade-open",
+                "set": {
+                  "el": "div",
+                  "attrs": "class=\"《pname》__content\""
+                },
+                "kids": [
+                  {
+                    "tag": "blade-form",
+                    "set": {
+                      "cls": "create-form",
+                      "action": "《purl》",
+                      "method": "POST",
+                      "look": "form-row"
+                    },
+                    "kids": [
+                      {
+                        "tag": "blade-csrf"
+                      },
+                      {
+                        "tag": "blade-open",
+                        "set": {
+                          "el": "div",
+                          "attrs": "class=\"create-form__item\""
+                        },
+                        "kids": [
+                          {
+                            "each": "pcols",
+                            "items": [
+                              {
+                                "if": [
+                                  "r.input",
+                                  "r.input!=textarea",
+                                  "r.input!=select"
+                                ],
+                                "tag": "blade-input",
+                                "set": {
+                                  "attrs": "class=\"create-form__item-input\" type=\"《r.input》\" name=\"《r.name》\" value=\"{{ old('《r.name》') }}\""
+                                }
+                              },
+                              {
+                                "if": "r.input=textarea",
+                                "tag": "blade-inline",
+                                "set": {
+                                  "el": "textarea",
+                                  "attrs": "class=\"create-form__item-input\" name=\"《r.name》\"",
+                                  "inner": "{{ old('《r.name》') }}"
+                                }
+                              },
+                              {
+                                "if": "r.input=select",
+                                "tag": "blade-open",
+                                "set": {
+                                  "el": "select",
+                                  "attrs": "class=\"create-form__item-select\" name=\"《r.name》\""
+                                },
+                                "kids": [
+                                  {
+                                    "tag": "blade-foreach",
+                                    "set": {
+                                      "list": "$《pvars》",
+                                      "item": "$《pvar》"
+                                    },
+                                    "kids": [
+                                      {
+                                        "tag": "blade-inline",
+                                        "set": {
+                                          "el": "option",
+                                          "attrs": "value=\"{{ $《pvar》->id }}\"",
+                                          "inner": "{{ $《pvar》->《plabel》 }}"
+                                        }
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "tag": "blade-open",
+                        "set": {
+                          "el": "div",
+                          "attrs": "class=\"create-form__button\""
+                        },
+                        "kids": [
+                          {
+                            "tag": "blade-inline",
+                            "set": {
+                              "el": "button",
+                              "attrs": "class=\"create-form__button-submit\" type=\"submit\"",
+                              "inner": "《b_create》"
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "tag": "blade-table",
+                    "set": {
+                      "cls": "list-table__inner"
+                    },
+                    "kids": [
+                      {
+                        "tag": "blade-open",
+                        "set": {
+                          "el": "tr",
+                          "attrs": "class=\"list-table__row\""
+                        },
+                        "kids": [
+                          {
+                            "tag": "blade-inline",
+                            "set": {
+                              "el": "th",
+                              "attrs": "class=\"list-table__header\"",
+                              "inner": "《p_head》"
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "tag": "blade-foreach",
+                        "set": {
+                          "list": "$《pvars》",
+                          "item": "$《pvar》"
+                        },
+                        "kids": [
+                          {
+                            "tag": "blade-open",
+                            "set": {
+                              "el": "tr",
+                              "attrs": "class=\"list-table__row\""
+                            },
+                            "kids": [
+                              {
+                                "tag": "blade-open",
+                                "set": {
+                                  "el": "td",
+                                  "attrs": "class=\"list-table__item\""
+                                },
+                                "kids": [
+                                  {
+                                    "tag": "blade-form",
+                                    "set": {
+                                      "cls": "update-form",
+                                      "action": "《purl》/{{ $《pvar》->id }}",
+                                      "method": "POST",
+                                      "look": "form-inline"
+                                    },
+                                    "kids": [
+                                      {
+                                        "tag": "blade-method",
+                                        "set": {
+                                          "verb": "PATCH"
+                                        }
+                                      },
+                                      {
+                                        "tag": "blade-csrf"
+                                      },
+                                      {
+                                        "tag": "blade-open",
+                                        "set": {
+                                          "el": "div",
+                                          "attrs": "class=\"update-form__item\""
+                                        },
+                                        "kids": [
+                                          {
+                                            "each": "pcols",
+                                            "items": [
+                                              {
+                                                "tag": "blade-input",
+                                                "set": {
+                                                  "attrs": "class=\"update-form__item-input\" type=\"text\" name=\"《r.name》\" value=\"{{ $《pvar》->《r.name》 }}\""
+                                                }
+                                              }
+                                            ],
+                                            "if": "r.upd"
+                                          }
+                                        ]
+                                      },
+                                      {
+                                        "tag": "blade-open",
+                                        "set": {
+                                          "el": "div",
+                                          "attrs": "class=\"update-form__button\""
+                                        },
+                                        "kids": [
+                                          {
+                                            "tag": "blade-inline",
+                                            "set": {
+                                              "el": "button",
+                                              "attrs": "class=\"update-form__button-submit\" type=\"submit\"",
+                                              "inner": "《b_update》"
+                                            }
+                                          }
+                                        ]
+                                      }
+                                    ]
+                                  }
+                                ]
+                              },
+                              {
+                                "tag": "blade-open",
+                                "set": {
+                                  "el": "td",
+                                  "attrs": "class=\"list-table__item\""
+                                },
+                                "kids": [
+                                  {
+                                    "tag": "blade-form",
+                                    "set": {
+                                      "cls": "delete-form",
+                                      "action": "《purl》/{{ $《pvar》->id }}",
+                                      "method": "POST",
+                                      "look": "form-inline"
+                                    },
+                                    "kids": [
+                                      {
+                                        "tag": "blade-method",
+                                        "set": {
+                                          "verb": "DELETE"
+                                        }
+                                      },
+                                      {
+                                        "tag": "blade-csrf"
+                                      },
+                                      {
+                                        "tag": "blade-open",
+                                        "set": {
+                                          "el": "div",
+                                          "attrs": "class=\"delete-form__button\""
+                                        },
+                                        "kids": [
+                                          {
+                                            "tag": "blade-inline",
+                                            "set": {
+                                              "el": "button",
+                                              "attrs": "class=\"delete-form__button-submit\" type=\"submit\"",
+                                              "inner": "《b_delete》"
+                                            }
+                                          }
+                                        ]
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "seeder-parent": {
+      "file": "file-seeder",
+      "vals": {
+        "name": "《pseeder》"
+      },
+      "secs": {
+        "body": [
+          {
+            "each": "pseed",
+            "items": [
+              {
+                "tag": "php-sd-create",
+                "set": {
+                  "model": "《pmodel》"
+                },
+                "kids": [
+                  {
+                    "tag": "php-sd-pair",
+                    "set": {
+                      "key": "《plabel》",
+                      "val": "'《one》'"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "seeder-main": {
+      "file": "file-seeder",
+      "vals": {
+        "name": "《seeder》"
+      },
+      "secs": {
+        "body": [
+          {
+            "tag": "php-sd-factory",
+            "set": {
+              "model": "《model》",
+              "n": "《count》"
+            }
+          }
+        ]
+      }
+    },
+    "factory-main": {
+      "file": "file-factory",
+      "vals": {
+        "name": "《factory》",
+        "models": "《pmodel》"
+      },
+      "secs": {
+        "fields": [
+          {
+            "each": "cols",
+            "items": [
+              {
+                "tag": "php-pair",
+                "set": {
+                  "key": "《r.name》",
+                  "val": [
+                    {
+                      "if": "r.fake",
+                      "t": "《r.fake》"
+                    },
+                    {
+                      "if": [
+                        "!r.fake",
+                        "r.fk"
+                      ],
+                      "t": "《pmodel》::inRandomOrder()->first()->id"
+                    },
+                    {
+                      "if": [
+                        "!r.fake",
+                        "!r.fk",
+                        "r.type=string"
+                      ],
+                      "t": "fake()->realText(《r.len》)"
+                    },
+                    {
+                      "if": [
+                        "!r.fake",
+                        "!r.fk",
+                        "r.type=text"
+                      ],
+                      "t": "fake()->realText()"
+                    },
+                    {
+                      "if": [
+                        "!r.fake",
+                        "!r.fk",
+                        "r.type!=string",
+                        "r.type!=text"
+                      ],
+                      "t": "0"
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "mg-img": {
+      "file": "file-migration",
+      "vals": {
+        "table": "《table》",
+        "do": "足す",
+        "file": "《img_mg》"
+      },
+      "secs": {
+        "cols": [
+          {
+            "each": "icols",
+            "items": [
+              {
+                "tag": "php-mg-fk",
+                "set": {
+                  "name": "《r.name》",
+                  "null": "《r.null》",
+                  "after": "《r.after》"
+                },
+                "kids": [
+                  {
+                    "tag": "php-mg-cascade",
+                    "if": "r.cascade"
+                  }
+                ],
+                "if": "r.fk"
+              },
+              {
+                "tag": "php-mg-col",
+                "set": {
+                  "name": "《r.name》",
+                  "type": "《r.type》",
+                  "len": "《r.len》"
+                },
+                "kids": [
+                  {
+                    "tag": "php-mg-null",
+                    "if": "r.null"
+                  },
+                  {
+                    "tag": "php-mg-default",
+                    "set": {
+                      "v": "《r.def》"
+                    },
+                    "if": "r.def"
+                  },
+                  {
+                    "tag": "php-mg-uniq",
+                    "if": "r.uniq"
+                  },
+                  {
+                    "tag": "php-mg-after",
+                    "set": {
+                      "col": "《r.after》"
+                    },
+                    "if": "r.after"
+                  }
+                ],
+                "if": "!r.fk"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "mg-status": {
+      "file": "file-migration",
+      "vals": {
+        "table": "《table》",
+        "do": "足す",
+        "file": "《st_mg》"
+      },
+      "secs": {
+        "cols": [
+          {
+            "each": "scols",
+            "items": [
+              {
+                "tag": "php-mg-fk",
+                "set": {
+                  "name": "《r.name》",
+                  "null": "《r.null》",
+                  "after": "《r.after》"
+                },
+                "kids": [
+                  {
+                    "tag": "php-mg-cascade",
+                    "if": "r.cascade"
+                  }
+                ],
+                "if": "r.fk"
+              },
+              {
+                "tag": "php-mg-col",
+                "set": {
+                  "name": "《r.name》",
+                  "type": "《r.type》",
+                  "len": "《r.len》"
+                },
+                "kids": [
+                  {
+                    "tag": "php-mg-null",
+                    "if": "r.null"
+                  },
+                  {
+                    "tag": "php-mg-default",
+                    "set": {
+                      "v": "《r.def》"
+                    },
+                    "if": "r.def"
+                  },
+                  {
+                    "tag": "php-mg-uniq",
+                    "if": "r.uniq"
+                  },
+                  {
+                    "tag": "php-mg-after",
+                    "set": {
+                      "col": "《r.after》"
+                    },
+                    "if": "r.after"
+                  }
+                ],
+                "if": "!r.fk"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "fortify-config": {
+      "file": "file-fortify-config",
+      "vals": {
+        "home": "《home》",
+        "views": "true"
+      },
+      "secs": {
+        "features": [
+          {
+            "tag": "php-fc-feature",
+            "set": {
+              "name": "registration"
+            }
+          }
+        ]
+      }
+    },
+    "fortify-boot": [
+      {
+        "tag": "php-use",
+        "set": {
+          "cls": "App\\Models\\User"
+        },
+        "if": "done_login"
+      },
+      {
+        "tag": "php-use",
+        "set": {
+          "cls": "Illuminate\\Support\\Facades\\Hash"
+        }
+      },
+      {
+        "tag": "php-ft-create",
+        "set": {
+          "cls": "CreateNewUser"
+        },
+        "nouse": true
+      },
+      {
+        "tag": "php-ft-view",
+        "set": {
+          "which": "loginView",
+          "view": "auth.login"
+        }
+      },
+      {
+        "tag": "php-ft-view",
+        "set": {
+          "which": "registerView",
+          "view": "auth.register"
+        }
+      },
+      {
+        "tag": "php-ft-auth",
+        "kids": [
+          {
+            "tag": "php-validate",
+            "kids": [
+              {
+                "each": "ucols",
+                "items": [
+                  {
+                    "tag": "php-rq-rule",
+                    "set": {
+                      "field": "《r.name》",
+                      "rules": "《r.lrules》"
+                    }
+                  }
+                ],
+                "if": "r.lrules"
+              }
+            ],
+            "els": [
+              {
+                "each": "umsgs",
+                "items": [
+                  {
+                    "tag": "php-rq-msg",
+                    "set": {
+                      "field": "《r.field》",
+                      "rule": "《r.rule》",
+                      "text": "《r.text》"
+                    }
+                  }
+                ],
+                "if": "r.field"
+              }
+            ]
+          },
+          {
+            "tag": "php-query",
+            "set": {
+              "var": "user",
+              "model": "User"
+            },
+            "kids": [
+              {
+                "tag": "php-where",
+                "set": {
+                  "col": "email",
+                  "op": "同じ",
+                  "val": "$request->email"
+                }
+              },
+              {
+                "tag": "php-get",
+                "set": {
+                  "how": "1件"
+                }
+              }
+            ]
+          },
+          {
+            "tag": "php-if",
+            "set": {
+              "cond": "$user && Hash::check($request->password, $user->password)"
+            },
+            "kids": [
+              {
+                "tag": "php-return-var",
+                "set": {
+                  "var": "user"
+                }
+              }
+            ]
+          }
+        ],
+        "nouse": true
+      }
+    ],
+    "view-login": {
+      "file": "file-blade",
+      "vals": {
+        "view": "auth.login",
+        "layout": "layouts.app"
+      },
+      "secs": {
+        "body": [
+          {
+            "tag": "blade-section",
+            "set": {
+              "name": "css"
+            },
+            "kids": [
+              {
+                "tag": "blade-css",
+                "set": {
+                  "file": "auth.css"
+                }
+              }
+            ]
+          },
+          {
+            "tag": "blade-section",
+            "set": {
+              "name": "header-button"
+            },
+            "kids": [
+              {
+                "tag": "blade-inline",
+                "set": {
+                  "el": "a",
+                  "attrs": "href=\"/register\"",
+                  "inner": "《t_to_register》"
+                }
+              }
+            ]
+          },
+          {
+            "tag": "blade-section",
+            "set": {
+              "name": "content"
+            },
+            "kids": [
+              {
+                "tag": "blade-open",
+                "set": {
+                  "el": "div",
+                  "attrs": "class=\"auth-form__content\""
+                },
+                "kids": [
+                  {
+                    "tag": "blade-open",
+                    "set": {
+                      "el": "div",
+                      "attrs": "class=\"auth-form__heading\""
+                    },
+                    "kids": [
+                      {
+                        "tag": "blade-inline",
+                        "set": {
+                          "el": "h2",
+                          "attrs": "",
+                          "inner": "《h_login》"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "tag": "blade-open",
+                    "set": {
+                      "el": "div",
+                      "attrs": "class=\"auth-form__card\""
+                    },
+                    "kids": [
+                      {
+                        "tag": "blade-form",
+                        "set": {
+                          "cls": "auth-form",
+                          "action": "/login",
+                          "method": "POST",
+                          "look": "form-col"
+                        },
+                        "kids": [
+                          {
+                            "tag": "blade-csrf"
+                          },
+                          {
+                            "each": "ucols",
+                            "items": [
+                              {
+                                "tag": "blade-open",
+                                "set": {
+                                  "el": "div",
+                                  "attrs": "class=\"auth-form__group\""
+                                },
+                                "kids": [
+                                  {
+                                    "tag": "blade-inline",
+                                    "set": {
+                                      "el": "label",
+                                      "attrs": "for=\"《r.name》\"",
+                                      "inner": "《r.label》"
+                                    }
+                                  },
+                                  {
+                                    "if": "r.input!=password",
+                                    "tag": "blade-input",
+                                    "set": {
+                                      "attrs": "type=\"《r.input》\" id=\"《r.name》\" name=\"《r.name》\" value=\"{{ old('《r.name》') }}\""
+                                    }
+                                  },
+                                  {
+                                    "if": "r.input=password",
+                                    "tag": "blade-input",
+                                    "set": {
+                                      "attrs": "type=\"password\" id=\"《r.name》\" name=\"《r.name》\""
+                                    }
+                                  },
+                                  {
+                                    "tag": "blade-open",
+                                    "set": {
+                                      "el": "div",
+                                      "attrs": "class=\"form__error\""
+                                    },
+                                    "kids": [
+                                      {
+                                        "tag": "blade-error",
+                                        "set": {
+                                          "name": "《r.name》"
+                                        },
+                                        "kids": [
+                                          {
+                                            "tag": "blade-inline",
+                                            "set": {
+                                              "el": "p",
+                                              "attrs": "class=\"auth-form__error-message\"",
+                                              "inner": "{{ $message }}"
+                                            }
+                                          }
+                                        ]
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ],
+                            "if": "r.login"
+                          },
+                          {
+                            "tag": "blade-open",
+                            "set": {
+                              "el": "div",
+                              "attrs": "class=\"auth__form-button\""
+                            },
+                            "kids": [
+                              {
+                                "tag": "blade-inline",
+                                "set": {
+                                  "el": "button",
+                                  "attrs": "class=\"btn-primary\" type=\"submit\"",
+                                  "inner": "《b_login》"
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "view-register": {
+      "file": "file-blade",
+      "vals": {
+        "view": "auth.register",
+        "layout": "layouts.app"
+      },
+      "secs": {
+        "body": [
+          {
+            "tag": "blade-section",
+            "set": {
+              "name": "css"
+            },
+            "kids": [
+              {
+                "tag": "blade-css",
+                "set": {
+                  "file": "auth.css"
+                }
+              }
+            ]
+          },
+          {
+            "tag": "blade-section",
+            "set": {
+              "name": "header-button"
+            },
+            "kids": [
+              {
+                "tag": "blade-inline",
+                "set": {
+                  "el": "a",
+                  "attrs": "href=\"/login\"",
+                  "inner": "《t_to_login》"
+                }
+              }
+            ]
+          },
+          {
+            "tag": "blade-section",
+            "set": {
+              "name": "content"
+            },
+            "kids": [
+              {
+                "tag": "blade-open",
+                "set": {
+                  "el": "div",
+                  "attrs": "class=\"auth-form__content\""
+                },
+                "kids": [
+                  {
+                    "tag": "blade-open",
+                    "set": {
+                      "el": "div",
+                      "attrs": "class=\"auth-form__heading\""
+                    },
+                    "kids": [
+                      {
+                        "tag": "blade-inline",
+                        "set": {
+                          "el": "h2",
+                          "attrs": "",
+                          "inner": "《h_register》"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "tag": "blade-open",
+                    "set": {
+                      "el": "div",
+                      "attrs": "class=\"auth-form__card\""
+                    },
+                    "kids": [
+                      {
+                        "tag": "blade-form",
+                        "set": {
+                          "cls": "auth-form",
+                          "action": "/register",
+                          "method": "POST",
+                          "look": "form-col"
+                        },
+                        "kids": [
+                          {
+                            "tag": "blade-csrf"
+                          },
+                          {
+                            "each": "ucols",
+                            "items": [
+                              {
+                                "tag": "blade-open",
+                                "set": {
+                                  "el": "div",
+                                  "attrs": "class=\"auth-form__group\""
+                                },
+                                "kids": [
+                                  {
+                                    "tag": "blade-inline",
+                                    "set": {
+                                      "el": "label",
+                                      "attrs": "for=\"《r.name》\"",
+                                      "inner": "《r.label》"
+                                    }
+                                  },
+                                  {
+                                    "if": "r.input!=password",
+                                    "tag": "blade-input",
+                                    "set": {
+                                      "attrs": "type=\"《r.input》\" id=\"《r.name》\" name=\"《r.name》\" value=\"{{ old('《r.name》') }}\""
+                                    }
+                                  },
+                                  {
+                                    "if": "r.input=password",
+                                    "tag": "blade-input",
+                                    "set": {
+                                      "attrs": "type=\"password\" id=\"《r.name》\" name=\"《r.name》\""
+                                    }
+                                  },
+                                  {
+                                    "tag": "blade-open",
+                                    "set": {
+                                      "el": "div",
+                                      "attrs": "class=\"form__error\""
+                                    },
+                                    "kids": [
+                                      {
+                                        "tag": "blade-error",
+                                        "set": {
+                                          "name": "《r.name》"
+                                        },
+                                        "kids": [
+                                          {
+                                            "tag": "blade-inline",
+                                            "set": {
+                                              "el": "p",
+                                              "attrs": "class=\"auth-form__error-message\"",
+                                              "inner": "{{ $message }}"
+                                            }
+                                          }
+                                        ]
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          },
+                          {
+                            "tag": "blade-open",
+                            "set": {
+                              "el": "div",
+                              "attrs": "class=\"auth__form-button\""
+                            },
+                            "kids": [
+                              {
+                                "tag": "blade-inline",
+                                "set": {
+                                  "el": "button",
+                                  "attrs": "class=\"btn-primary\" type=\"submit\"",
+                                  "inner": "《b_register》"
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "mg-owner": {
+      "file": "file-migration",
+      "vals": {
+        "table": "《table》",
+        "do": "足す",
+        "file": "《own_mg》"
+      },
+      "secs": {
+        "cols": [
+          {
+            "tag": "php-mg-fk",
+            "set": {
+              "name": "《ofk》",
+              "null": "空でもいい",
+              "after": [
+                {
+                  "if": "oafter",
+                  "t": "《oafter》"
+                }
+              ]
+            },
+            "kids": [
+              {
+                "tag": "php-mg-cascade"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "user-model": {
+      "file": "file-model",
+      "vals": {
+        "model": "User",
+        "base": "Authenticatable"
+      },
+      "secs": {
+        "rels": []
+      }
+    },
+    "mg-like": {
+      "file": "file-migration",
+      "vals": {
+        "table": "《ltable》",
+        "do": "作る",
+        "file": "《lmg》"
+      },
+      "secs": {
+        "cols": [
+          {
+            "tag": "php-mg-id"
+          },
+          {
+            "tag": "php-mg-fk",
+            "set": {
+              "name": "《ofk》"
+            },
+            "kids": [
+              {
+                "tag": "php-mg-cascade"
+              }
+            ]
+          },
+          {
+            "tag": "php-mg-fk",
+            "set": {
+              "name": "《lfk》"
+            },
+            "kids": [
+              {
+                "tag": "php-mg-cascade"
+              }
+            ]
+          },
+          {
+            "tag": "php-mg-unique2",
+            "set": {
+              "cols": "《ofk》, 《lfk》"
+            }
+          },
+          {
+            "tag": "php-mg-ts"
+          }
+        ]
+      }
+    }
+  },
+  "css_base": [
+    {
+      "name": "--color-ink",
+      "value": "#333",
+      "label": "文字の色（知らせの帯など）"
+    },
+    {
+      "name": "--color-black",
+      "value": "#000",
+      "label": "黒（上の帯・作るボタン）"
+    },
+    {
+      "name": "--color-white",
+      "value": "#fff",
+      "label": "白（ボタンの文字など）"
+    },
+    {
+      "name": "--color-border",
+      "value": "#ccc",
+      "label": "入力欄と表の見出しの線の色"
+    },
+    {
+      "name": "--color-line",
+      "value": "#eee",
+      "label": "表の行の区切りの線の色"
+    },
+    {
+      "name": "--color-success",
+      "value": "#d4edda",
+      "label": "知らせの帯（成功）の色"
+    },
+    {
+      "name": "--color-danger",
+      "value": "#f8d7da",
+      "label": "知らせの帯（エラー）の色"
+    },
+    {
+      "name": "--color-blue",
+      "value": "#2563eb",
+      "label": "直すボタンの色"
+    },
+    {
+      "name": "--color-red",
+      "value": "#dc2626",
+      "label": "消すボタンの色"
+    },
+    {
+      "name": "--color-accent",
+      "value": "#82756A",
+      "label": "カードの見出し・主なボタンの色"
+    },
+    {
+      "name": "--color-accent-dark",
+      "value": "#6B5F55",
+      "label": "主なボタンを指した時の色"
+    },
+    {
+      "name": "--color-card-border",
+      "value": "#E0D8D0",
+      "label": "カードと入力欄（カードの中）の線の色"
+    },
+    {
+      "name": "--color-field",
+      "value": "#FAF8F5",
+      "label": "カードの中の入力欄の背景の色"
+    },
+    {
+      "name": "--color-label",
+      "value": "#3D3530",
+      "label": "カードの中の見出しの文字の色"
+    },
+    {
+      "name": "--color-error",
+      "value": "#E8826A",
+      "label": "欄ごとのエラーの文字の色"
+    },
+    {
+      "name": "--font-size-base",
+      "value": "14px",
+      "label": "入力欄・ボタン・表の文字の大きさ"
+    },
+    {
+      "name": "--font-size-logo",
+      "value": "20px",
+      "label": "ロゴの文字の大きさ"
+    },
+    {
+      "name": "--space-s",
+      "value": "8px",
+      "label": "小さい余白"
+    },
+    {
+      "name": "--space-m",
+      "value": "16px",
+      "label": "中くらいの余白"
+    },
+    {
+      "name": "--space-l",
+      "value": "24px",
+      "label": "大きい余白"
+    },
+    {
+      "name": "--width-content",
+      "value": "1100px",
+      "label": "本文の一番広い時の幅"
+    }
+  ],
+  "styles": [
+    {
+      "id": "header",
+      "name": "上の帯",
+      "words": [
+        "header"
+      ],
+      "common": true,
+      "rules": [
+        {
+          "props": [
+            {
+              "p": "background-color",
+              "v": "var(--color-black)"
+            },
+            {
+              "p": "padding",
+              "v": "16px var(--space-l)"
+            },
+            {
+              "p": "display",
+              "v": "flex"
+            },
+            {
+              "p": "justify-content",
+              "v": "space-between"
+            },
+            {
+              "p": "align-items",
+              "v": "center"
+            }
+          ]
+        }
+      ],
+      "src": "app04 common.css の header"
+    },
+    {
+      "id": "header-logo",
+      "name": "ロゴ",
+      "words": [
+        "header__logo"
+      ],
+      "common": true,
+      "rules": [
+        {
+          "sel": " a",
+          "props": [
+            {
+              "p": "color",
+              "v": "var(--color-white)"
+            },
+            {
+              "p": "font-size",
+              "v": "var(--font-size-logo)"
+            },
+            {
+              "p": "font-weight",
+              "v": "bold"
+            },
+            {
+              "p": "text-decoration",
+              "v": "none"
+            }
+          ]
+        }
+      ],
+      "src": "app04 common.css の header .header__logo a"
+    },
+    {
+      "id": "header-nav",
+      "name": "上の帯の案内",
+      "words": [
+        "header__nav"
+      ],
+      "common": true,
+      "rules": [
+        {
+          "props": [
+            {
+              "p": "display",
+              "v": "flex"
+            },
+            {
+              "p": "gap",
+              "v": "var(--space-m)"
+            },
+            {
+              "p": "align-items",
+              "v": "center"
+            }
+          ]
+        },
+        {
+          "sel": " a",
+          "props": [
+            {
+              "p": "color",
+              "v": "var(--color-white)"
+            },
+            {
+              "p": "font-size",
+              "v": "var(--font-size-base)"
+            },
+            {
+              "p": "text-decoration",
+              "v": "none"
+            }
+          ]
+        }
+      ],
+      "src": "app04 common.css の header .header__nav a（並べ方は app04 の header にそろえた）"
+    },
+    {
+      "id": "main",
+      "name": "本文の場所",
+      "words": [
+        "main"
+      ],
+      "el": [
+        "main"
+      ],
+      "common": true,
+      "rules": [
+        {
+          "props": [
+            {
+              "p": "padding",
+              "v": "0 var(--space-m)"
+            }
+          ]
+        }
+      ],
+      "src": "app03 common.css の .main（余白は app04 の本文にそろえた）"
+    },
+    {
+      "id": "alert-success",
+      "name": "知らせの帯（成功）",
+      "words": [
+        "alert--success"
+      ],
+      "common": true,
+      "rules": [
+        {
+          "props": [
+            {
+              "p": "background-color",
+              "v": "var(--color-success)"
+            },
+            {
+              "p": "padding",
+              "v": "12px var(--space-l)"
+            },
+            {
+              "p": "color",
+              "v": "var(--color-ink)"
+            }
+          ]
+        }
+      ],
+      "src": "app04 common.css の .todo__alert--success"
+    },
+    {
+      "id": "alert-danger",
+      "name": "知らせの帯（エラー）",
+      "words": [
+        "alert--danger"
+      ],
+      "common": true,
+      "rules": [
+        {
+          "props": [
+            {
+              "p": "background-color",
+              "v": "var(--color-danger)"
+            },
+            {
+              "p": "padding",
+              "v": "12px var(--space-l)"
+            },
+            {
+              "p": "color",
+              "v": "var(--color-ink)"
+            }
+          ]
+        }
+      ],
+      "src": "app04 common.css の .todo__alert--danger"
+    },
+    {
+      "id": "content",
+      "name": "本文の箱",
+      "words": [
+        "__content",
+        "container"
+      ],
+      "rules": [
+        {
+          "props": [
+            {
+              "p": "max-width",
+              "v": "var(--width-content)"
+            },
+            {
+              "p": "margin",
+              "v": "40px auto"
+            },
+            {
+              "p": "padding",
+              "v": "0 var(--space-l)"
+            }
+          ]
+        }
+      ],
+      "src": "app04 index.css の .todo__content"
+    },
+    {
+      "id": "form-row",
+      "name": "横に並べるフォーム",
+      "words": [
+        "create-form",
+        "search-form"
+      ],
+      "rules": [
+        {
+          "props": [
+            {
+              "p": "display",
+              "v": "flex"
+            },
+            {
+              "p": "align-items",
+              "v": "center"
+            },
+            {
+              "p": "gap",
+              "v": "var(--space-m)"
+            },
+            {
+              "p": "margin-bottom",
+              "v": "var(--space-m)"
+            }
+          ]
+        }
+      ],
+      "src": "app04 index.css の .create-form"
+    },
+    {
+      "id": "form-inline",
+      "name": "表の中の1行のフォーム",
+      "words": [
+        "update-form",
+        "delete-form",
+        "like-form"
+      ],
+      "rules": [
+        {
+          "props": [
+            {
+              "p": "display",
+              "v": "flex"
+            },
+            {
+              "p": "align-items",
+              "v": "center"
+            },
+            {
+              "p": "gap",
+              "v": "var(--space-s)"
+            }
+          ]
+        }
+      ],
+      "src": "app04 index.css の .update-form"
+    },
+    {
+      "id": "form-item",
+      "name": "フォームの欄の並び",
+      "words": [
+        "-form__item"
+      ],
+      "rules": [
+        {
+          "props": [
+            {
+              "p": "display",
+              "v": "flex"
+            },
+            {
+              "p": "gap",
+              "v": "var(--space-s)"
+            },
+            {
+              "p": "flex",
+              "v": "1"
+            }
+          ]
+        }
+      ],
+      "src": "app04 index.css の .create-form__item"
+    },
+    {
+      "id": "input",
+      "name": "入力欄",
+      "words": [
+        "__item-input",
+        "-input"
+      ],
+      "el": [
+        "input",
+        "textarea"
+      ],
+      "rules": [
+        {
+          "props": [
+            {
+              "p": "flex",
+              "v": "1"
+            },
+            {
+              "p": "padding",
+              "v": "8px 12px"
+            },
+            {
+              "p": "border",
+              "v": "1px solid var(--color-border)"
+            },
+            {
+              "p": "font-size",
+              "v": "var(--font-size-base)"
+            }
+          ]
+        }
+      ],
+      "src": "app04 index.css の .create-form__item-input"
+    },
+    {
+      "id": "input-inline",
+      "name": "表の中の入力欄",
+      "words": [
+        "update-form__item-input"
+      ],
+      "rules": [
+        {
+          "props": [
+            {
+              "p": "width",
+              "v": "300px"
+            },
+            {
+              "p": "padding",
+              "v": "6px 10px"
+            },
+            {
+              "p": "border",
+              "v": "1px solid var(--color-border)"
+            },
+            {
+              "p": "font-size",
+              "v": "var(--font-size-base)"
+            }
+          ]
+        }
+      ],
+      "src": "app04 index.css の .update-form__item-input"
+    },
+    {
+      "id": "select",
+      "name": "選ぶ欄",
+      "words": [
+        "-select"
+      ],
+      "el": [
+        "select"
+      ],
+      "rules": [
+        {
+          "props": [
+            {
+              "p": "padding",
+              "v": "8px 12px"
+            },
+            {
+              "p": "border",
+              "v": "1px solid var(--color-border)"
+            },
+            {
+              "p": "font-size",
+              "v": "var(--font-size-base)"
+            }
+          ]
+        }
+      ],
+      "src": "app04 index.css の .create-form__item-select"
+    },
+    {
+      "id": "btn-black",
+      "name": "作る・探すボタン",
+      "words": [
+        "__button-submit"
+      ],
+      "el": [
+        "button"
+      ],
+      "rules": [
+        {
+          "props": [
+            {
+              "p": "background-color",
+              "v": "var(--color-black)"
+            },
+            {
+              "p": "color",
+              "v": "var(--color-white)"
+            },
+            {
+              "p": "border",
+              "v": "none"
+            },
+            {
+              "p": "padding",
+              "v": "8px var(--space-l)"
+            },
+            {
+              "p": "font-size",
+              "v": "var(--font-size-base)"
+            },
+            {
+              "p": "cursor",
+              "v": "pointer"
+            }
+          ]
+        }
+      ],
+      "src": "app04 index.css の .create-form__button-submit"
+    },
+    {
+      "id": "btn-blue",
+      "name": "直すボタン",
+      "words": [
+        "update-form__button-submit"
+      ],
+      "rules": [
+        {
+          "props": [
+            {
+              "p": "background-color",
+              "v": "var(--color-blue)"
+            },
+            {
+              "p": "color",
+              "v": "var(--color-white)"
+            },
+            {
+              "p": "border",
+              "v": "none"
+            },
+            {
+              "p": "padding",
+              "v": "8px var(--space-m)"
+            },
+            {
+              "p": "border-radius",
+              "v": "4px"
+            },
+            {
+              "p": "cursor",
+              "v": "pointer"
+            }
+          ]
+        }
+      ],
+      "src": "app04 index.css の .update-form__button-submit"
+    },
+    {
+      "id": "btn-red",
+      "name": "消すボタン",
+      "words": [
+        "delete-form__button-submit"
+      ],
+      "rules": [
+        {
+          "props": [
+            {
+              "p": "background-color",
+              "v": "var(--color-red)"
+            },
+            {
+              "p": "color",
+              "v": "var(--color-white)"
+            },
+            {
+              "p": "border",
+              "v": "none"
+            },
+            {
+              "p": "padding",
+              "v": "8px var(--space-m)"
+            },
+            {
+              "p": "border-radius",
+              "v": "4px"
+            },
+            {
+              "p": "cursor",
+              "v": "pointer"
+            }
+          ]
+        }
+      ],
+      "src": "app04 index.css の .delete-form__button-submit"
+    },
+    {
+      "id": "table",
+      "name": "一覧の表",
+      "words": [
+        "-table__inner"
+      ],
+      "el": [
+        "table"
+      ],
+      "rules": [
+        {
+          "props": [
+            {
+              "p": "width",
+              "v": "100%"
+            },
+            {
+              "p": "border-collapse",
+              "v": "collapse"
+            }
+          ]
+        }
+      ],
+      "src": "app04 index.css の .todo-table__inner"
+    },
+    {
+      "id": "table-header",
+      "name": "表の見出し",
+      "words": [
+        "-table__header"
+      ],
+      "el": [
+        "th"
+      ],
+      "rules": [
+        {
+          "props": [
+            {
+              "p": "text-align",
+              "v": "left"
+            },
+            {
+              "p": "font-weight",
+              "v": "bold"
+            },
+            {
+              "p": "padding-bottom",
+              "v": "var(--space-s)"
+            },
+            {
+              "p": "border-bottom",
+              "v": "2px solid var(--color-border)"
+            }
+          ]
+        }
+      ],
+      "src": "app04 index.css の .todo-table__header"
+    },
+    {
+      "id": "table-row",
+      "name": "表の行",
+      "words": [
+        "-table__row"
+      ],
+      "el": [
+        "tr"
+      ],
+      "rules": [
+        {
+          "props": [
+            {
+              "p": "border-bottom",
+              "v": "1px solid var(--color-line)"
+            }
+          ]
+        }
+      ],
+      "src": "app04 index.css の .todo-table__row"
+    },
+    {
+      "id": "table-item",
+      "name": "表のます",
+      "words": [
+        "-table__item"
+      ],
+      "el": [
+        "td"
+      ],
+      "rules": [
+        {
+          "props": [
+            {
+              "p": "padding",
+              "v": "12px 0"
+            },
+            {
+              "p": "vertical-align",
+              "v": "middle"
+            }
+          ]
+        }
+      ],
+      "src": "app04 index.css の .todo-table__item"
+    },
+    {
+      "id": "thumb",
+      "name": "小さい画像",
+      "words": [
+        "__item-img",
+        "-thumb"
+      ],
+      "el": [
+        "img"
+      ],
+      "rules": [
+        {
+          "props": [
+            {
+              "p": "width",
+              "v": "100px"
+            },
+            {
+              "p": "height",
+              "v": "auto"
+            }
+          ]
+        }
+      ],
+      "src": "app04 index.blade.php の img（width=\"100\"）"
+    },
+    {
+      "id": "card-page",
+      "name": "カードを真ん中に置く場所",
+      "words": [
+        "-form__content",
+        "auth__content"
+      ],
+      "rules": [
+        {
+          "props": [
+            {
+              "p": "display",
+              "v": "flex"
+            },
+            {
+              "p": "flex-direction",
+              "v": "column"
+            },
+            {
+              "p": "align-items",
+              "v": "center"
+            },
+            {
+              "p": "justify-content",
+              "v": "center"
+            },
+            {
+              "p": "min-height",
+              "v": "calc(100vh - 80px)"
+            },
+            {
+              "p": "padding",
+              "v": "40px var(--space-m)"
+            }
+          ]
+        }
+      ],
+      "src": "app04 auth.css の .auth-form__content"
+    },
+    {
+      "id": "heading",
+      "name": "見出し",
+      "words": [
+        "__heading"
+      ],
+      "rules": [
+        {
+          "props": [
+            {
+              "p": "margin-bottom",
+              "v": "var(--space-l)"
+            },
+            {
+              "p": "text-align",
+              "v": "center"
+            }
+          ]
+        },
+        {
+          "sel": " h2",
+          "props": [
+            {
+              "p": "font-size",
+              "v": "2rem"
+            },
+            {
+              "p": "color",
+              "v": "var(--color-accent)"
+            },
+            {
+              "p": "letter-spacing",
+              "v": "0.1em"
+            }
+          ]
+        }
+      ],
+      "src": "app04 auth.css の .auth-form__heading"
+    },
+    {
+      "id": "card",
+      "name": "カード",
+      "words": [
+        "__card"
+      ],
+      "rules": [
+        {
+          "props": [
+            {
+              "p": "width",
+              "v": "40vw"
+            },
+            {
+              "p": "margin",
+              "v": "0 auto"
+            },
+            {
+              "p": "background-color",
+              "v": "var(--color-white)"
+            },
+            {
+              "p": "border",
+              "v": "1.5px solid var(--color-card-border)"
+            },
+            {
+              "p": "border-radius",
+              "v": "16px"
+            },
+            {
+              "p": "padding",
+              "v": "48px 40px"
+            },
+            {
+              "p": "box-shadow",
+              "v": "0 4px 24px rgba(0, 0, 0, 0.06)"
+            }
+          ]
+        }
+      ],
+      "src": "app04 auth.css の .auth-form__card"
+    },
+    {
+      "id": "form-col",
+      "name": "縦に並べるフォーム",
+      "words": [
+        "auth-form",
+        "card-form"
+      ],
+      "rules": [
+        {
+          "props": [
+            {
+              "p": "display",
+              "v": "flex"
+            },
+            {
+              "p": "flex-direction",
+              "v": "column"
+            },
+            {
+              "p": "gap",
+              "v": "20px"
+            }
+          ]
+        }
+      ],
+      "src": "app04 auth.css の .auth-form"
+    },
+    {
+      "id": "form-group",
+      "name": "欄のまとまり（見出し・欄・エラー）",
+      "words": [
+        "__group",
+        "form-group"
+      ],
+      "rules": [
+        {
+          "props": [
+            {
+              "p": "display",
+              "v": "flex"
+            },
+            {
+              "p": "flex-direction",
+              "v": "column"
+            },
+            {
+              "p": "gap",
+              "v": "6px"
+            }
+          ]
+        },
+        {
+          "sel": " label",
+          "props": [
+            {
+              "p": "font-size",
+              "v": "0.875rem"
+            },
+            {
+              "p": "font-weight",
+              "v": "bold"
+            },
+            {
+              "p": "color",
+              "v": "var(--color-label)"
+            }
+          ]
+        },
+        {
+          "sel": " input",
+          "props": [
+            {
+              "p": "width",
+              "v": "100%"
+            },
+            {
+              "p": "padding",
+              "v": "12px 16px"
+            },
+            {
+              "p": "font-size",
+              "v": "1rem"
+            },
+            {
+              "p": "color",
+              "v": "var(--color-label)"
+            },
+            {
+              "p": "background-color",
+              "v": "var(--color-field)"
+            },
+            {
+              "p": "border",
+              "v": "1.5px solid var(--color-card-border)"
+            },
+            {
+              "p": "border-radius",
+              "v": "8px"
+            },
+            {
+              "p": "box-sizing",
+              "v": "border-box"
+            }
+          ]
+        },
+        {
+          "sel": " textarea",
+          "props": [
+            {
+              "p": "width",
+              "v": "100%"
+            },
+            {
+              "p": "min-height",
+              "v": "120px"
+            },
+            {
+              "p": "padding",
+              "v": "12px 16px"
+            },
+            {
+              "p": "font-size",
+              "v": "1rem"
+            },
+            {
+              "p": "background-color",
+              "v": "var(--color-field)"
+            },
+            {
+              "p": "border",
+              "v": "1.5px solid var(--color-card-border)"
+            },
+            {
+              "p": "border-radius",
+              "v": "8px"
+            },
+            {
+              "p": "box-sizing",
+              "v": "border-box"
+            }
+          ]
+        }
+      ],
+      "src": "app04 auth.css の .auth-form__group（textarea は app03 index.css の高さ）"
+    },
+    {
+      "id": "error",
+      "name": "欄ごとのエラーの文",
+      "words": [
+        "__error-message",
+        "error-message"
+      ],
+      "rules": [
+        {
+          "props": [
+            {
+              "p": "font-size",
+              "v": "0.8rem"
+            },
+            {
+              "p": "color",
+              "v": "var(--color-error)"
+            },
+            {
+              "p": "margin",
+              "v": "0"
+            }
+          ]
+        }
+      ],
+      "src": "app04 auth.css の .auth-form__error-message"
+    },
+    {
+      "id": "form-error",
+      "name": "エラーの場所",
+      "words": [
+        "form__error"
+      ],
+      "rules": [
+        {
+          "props": [
+            {
+              "p": "min-height",
+              "v": "20px"
+            }
+          ]
+        }
+      ],
+      "src": "app04 auth.css の .form__error"
+    },
+    {
+      "id": "form-button",
+      "name": "ボタンの場所",
+      "words": [
+        "__form-button"
+      ],
+      "rules": [
+        {
+          "props": [
+            {
+              "p": "display",
+              "v": "flex"
+            },
+            {
+              "p": "justify-content",
+              "v": "center"
+            },
+            {
+              "p": "margin-top",
+              "v": "var(--space-s)"
+            }
+          ]
+        }
+      ],
+      "src": "app04 auth.css の .auth__form-button"
+    },
+    {
+      "id": "button-box",
+      "name": "ボタンの箱",
+      "words": [
+        "-form__button"
+      ],
+      "rules": [
+        {
+          "props": [
+            {
+              "p": "display",
+              "v": "flex"
+            }
+          ]
+        }
+      ],
+      "src": "基準アプリでは見た目が無い箱（並べ方だけ付けた）"
+    },
+    {
+      "id": "btn-primary",
+      "name": "主なボタン",
+      "words": [
+        "btn-primary"
+      ],
+      "rules": [
+        {
+          "props": [
+            {
+              "p": "padding",
+              "v": "12px 48px"
+            },
+            {
+              "p": "font-size",
+              "v": "1rem"
+            },
+            {
+              "p": "font-weight",
+              "v": "bold"
+            },
+            {
+              "p": "letter-spacing",
+              "v": "0.05em"
+            },
+            {
+              "p": "color",
+              "v": "var(--color-white)"
+            },
+            {
+              "p": "background-color",
+              "v": "var(--color-accent)"
+            },
+            {
+              "p": "border",
+              "v": "none"
+            },
+            {
+              "p": "border-radius",
+              "v": "24px"
+            },
+            {
+              "p": "cursor",
+              "v": "pointer"
+            }
+          ]
+        },
+        {
+          "sel": ":hover",
+          "props": [
+            {
+              "p": "background-color",
+              "v": "var(--color-accent-dark)"
+            }
+          ]
+        }
+      ],
+      "src": "app04 auth.css の .btn-primary"
+    }
+  ]
+}

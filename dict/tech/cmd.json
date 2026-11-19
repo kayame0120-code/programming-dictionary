@@ -1,0 +1,41 @@
+{
+  "format": 2,
+  "layer": "tech",
+  "note": "土台：コマンドの読み方の決まり。git の札だけを作る（artisan・composer などは札にしない）。ファイルの種類と札は、アプリ×機能の束で足す",
+  "tech": {
+    "id": "cmd",
+    "name": "コマンド",
+    "lang": "cmd",
+    "lines_file": "file-cmd",
+    "looks": "^\\s*git\\s+\\w",
+    "priority": 1
+  },
+  "langs": {
+    "cmd": "コマンド"
+  },
+  "lang_rules": {
+    "cmd": {
+      "pair": {
+        "head": "^[@<]?[\\w:-]+",
+        "after": "[\\s>(]",
+        "elif_after": "[\\s(]",
+        "else_not": "[\\w(]"
+      },
+      "comments": [
+        {
+          "re": "\\{\\{--[\\s\\S]*?--\\}\\}"
+        },
+        {
+          "re": "\\/\\*[\\s\\S]*?\\*\\/"
+        },
+        {
+          "re": "(^|[^:'\"\\\\])\\/\\/[^\\n]*",
+          "keep": 1
+        }
+      ],
+      "code_marks": [
+        "^\\s*(npm|git|docker|cd)\\b"
+      ]
+    }
+  }
+}

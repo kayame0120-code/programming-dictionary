@@ -1,7 +1,7 @@
 {
   "format": 2,
   "layer": "tech",
-  "note": "app04×翻訳：app04 のファイルを読むのに要るファイルの種類",
+  "note": "app04×翻訳：app04（カテゴリ付きTODO・Laravel 8）の自作ファイル30本を読むのに要るファイルの種類。骨組みは Laravel 13 の形で出す",
   "files": [
     {
       "id": "file-controller",
