@@ -1,0 +1,66 @@
+# dict/inbox/ に zip が置かれたら、辞書の置き場所に振り分けて目次を直し、公開ページを更新する。
+# 中身の処理は .github/inbox/run.js（辞書アプリと同じ js/loader.js で振り分け・検品する）。
+name: 辞書のzipを取り込む
+
+on:
+  push:
+    paths:
+      - 'dict/inbox/**'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+
+concurrency:
+  group: dict-inbox-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  take-in:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: zipを振り分けて検品する
+        id: run
+        run: |
+          set +e
+          node .github/inbox/run.js "$GITHUB_WORKSPACE"
+          echo "code=$?" >> "$GITHUB_OUTPUT"
+
+      - name: 止まった時は、置きかけた物を元に戻す
+        if: steps.run.outputs.code != '0' && steps.run.outputs.code != '3'
+        run: |
+          git ls-files -z dict | grep -zv '^dict/inbox/' | xargs -0 -r git checkout HEAD --
+          git clean -fdq -- dict ':(exclude)dict/inbox'
+          find dict/inbox -mindepth 1 ! -name README.md -exec rm -rf {} +
+
+      - name: GitHubに保存する
+        if: steps.run.outputs.code != '3'
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A dict
+          if [ "${{ steps.run.outputs.code }}" = "0" ]; then msg='dict/inbox の zip を辞書に取り込む'; else msg='dict/inbox の zip は取り込まずに止めた（理由は dict/inbox/README.md）'; fi
+          git commit -q -m "$msg"
+          for i in 1 2 3; do git pull -q --rebase && git push -q && break; sleep 5; done
+
+      - name: 公開ページを更新する
+        if: steps.run.outputs.code == '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api -X POST "repos/${GITHUB_REPOSITORY}/pages/builds" --silent \
+            && echo '公開ページの更新を頼みました' \
+            || echo '::warning::公開ページの更新を頼めませんでした（Settings の Pages の設定を確かめてください）'
+
+      - name: 止まった時は赤にする
+        if: steps.run.outputs.code != '0' && steps.run.outputs.code != '3'
+        run: |
+          echo '::error::取り込みを止めました。理由は dict/inbox/README.md に書いてあります'
+          exit 1
