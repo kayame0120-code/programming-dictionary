@@ -117,6 +117,11 @@ details.inner{padding:6px 10px;margin-top:8px}
 /* 窓口の知らせの帯（辞書のファイルに使えない所がある時だけ出る） */
 .dicterr{border-color:var(--warn,#c2410c);background:var(--warn-bg,#fff4ec);font-size:13px}
 .dicterr ul{margin:4px 0 0;padding-left:20px}
+.upbar{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;justify-content:space-between;padding:10px 12px;font-size:13px;color:var(--sub)}
+.upbar b{color:var(--ink)}
+.upbar-t{flex:1 1 320px}
+.upbar-go{flex:none;display:inline-block;background:var(--accent);color:var(--card);border-radius:8px;padding:6px 14px;font-weight:600;text-decoration:none;white-space:nowrap}
+.upbar-go:hover{opacity:.9}
 .judge .pre{color:var(--sub)}
 /* 辞書の状態：JSONを入れる落とし口と、人が読む状態 */
 .drop{display:flex;flex-direction:column;align-items:center;gap:2px;border:2px dashed var(--line);border-radius:10px;padding:22px 12px;margin:10px 0 8px;text-align:center;cursor:pointer;color:var(--sub);background:var(--bg)}

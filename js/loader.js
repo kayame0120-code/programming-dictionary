@@ -593,9 +593,27 @@ document.addEventListener('dragleave',e=>{if(!hasFiles(e))return;dragN=Math.max(
 document.addEventListener('drop',async e=>{if(!hasFiles(e))return;e.preventDefault();dragN=0;if(hint)hint.classList.add('hide');if(zone)zone.classList.remove('over');
  const jobs=grabDrop(e.dataTransfer);const r=await readGrab(jobs);takeIn(r.acc,r.notes)});
 const clr=$id('upClear');if(clr)clr.onclick=()=>{try{sessionStorage.removeItem(UP_KEY);sessionStorage.removeItem(NOTE_KEY)}catch(e){}location.reload()};
+/* このタブで入れた物を試している時に、本番に置く入口を出す。
+   本番への入口は GitHub の dict/inbox だけ。押すと inbox の「Upload files」の画面を別のタブで開く（置くのは人。ここからは何も送らない）。
+   帯が出ている時は、inbox の検品でも止まるので、押せる形にしない */
+const INBOX_UPLOAD='https://github.com/kayame0120-code/programming-dictionary/upload/main/dict/inbox';
+function renderUpBar(R){
+ const bar=$id('upBar');if(!bar)return;const ups=readUploads(),ok=ups.filter(u=>u.path),bad=ups.filter(u=>!u.path);
+ if(!ups.length){bar.classList.add('hide');bar.innerHTML='';return}
+ const bands=R?(R.errs||[]).length+(R.refs||[]).length:-1;
+ const head=`<b>このタブだけで、入れたファイル ${ok.length}本を試しています</b>（タブを閉じると消えます）`;
+ if(bands===0&&!bad.length){
+  bar.innerHTML=`<div class="upbar-t">${head}<br>思ったとおりに出たら、本番に置けます。開いた画面に、試した zip を開けず・名前を変えずにドラッグして「Commit changes」を押します。1〜2分たってから inbox を開き直すと、下に結果が出ています</div>`+
+   `<a class="upbar-go" href="${INBOX_UPLOAD}" target="_blank" rel="noopener">本番に置く（GitHub の inbox を開く）↗</a>`;
+ }else{
+  bar.innerHTML=`<div class="upbar-t">${head}<br>${bands<0?'辞書を読み込めていない':bad.length?'使えないファイルがある':'帯が出ている'}ので、このままでは本番に置けません（inbox の検品でも止まります）。直した zip を入れ直してください</div>`;
+ }
+ bar.classList.remove('hide');
+}
 /* このタブで入れたファイルの一覧（辞書が読めない時も出す） */
 function renderUploads(R){
  const box=$id('upNow');if(!box)return;const ups=readUploads();
+ renderUpBar(R);
  if(!ups.length){box.textContent='このタブで入れたファイル：なし（入れた物は、タブを閉じると消えます）'+(R&&R.state&&R.state.local&&(R.state.fromSite||[]).length?'。PCで開いているので、辞書は公開ページから読みました':'');if(clr)clr.classList.add('hide');return}
  if(clr)clr.classList.remove('hide');
  const added=((R&&R.state&&R.state.added)||[]),ok=ups.filter(u=>u.path),bad=ups.filter(u=>!u.path);
