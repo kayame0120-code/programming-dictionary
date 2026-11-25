@@ -1,0 +1,258 @@
+{
+ "format": 2,
+ "layer": "content",
+ "tech": "laravel",
+ "label": "app02×機能解説",
+ "note": "完成の物差しの 2章（app02：タスクの一覧・追加・更新・削除を1画面で）の手順を、作業の地図に出す中身。共通 S1〜S4 の手順・部品・値の質問・見た目は app04×機能解説の束の物を id で呼んで使い、ここには app02 の例文・言葉・対応表・手順だけを足した",
+ "keywords": {
+  "一覧": [
+   "一覧",
+   "全部"
+  ],
+  "追加": [
+   "追加"
+  ],
+  "更新": [
+   "更新"
+  ],
+  "削除": [
+   "削除"
+  ],
+  "1画面": [
+   "1画面"
+  ]
+ },
+ "examples": [
+  {
+   "id": "ex-app02",
+   "text": "タスクの一覧・追加・更新・削除を1画面で作る（平屋）",
+   "words": [
+    "一覧",
+    "追加",
+    "更新",
+    "削除",
+    "1画面"
+   ],
+   "steps": [
+    "st-common-s1",
+    "st-common-s2",
+    "st-common-s3",
+    "st-common-s4"
+   ]
+  }
+ ],
+ "rows": [
+  {
+   "if": "ex-app02",
+   "fixed": "（平屋：1画面）",
+   "action": "テーブル・モデル・決まり・コントローラー・ルート・画面・CSS を作る",
+   "file": "マイグレーション・モデル・決まり・コントローラー・ルート・画面・CSS"
+  }
+ ],
+ "steps": [
+  {
+   "id": "st-app02-01",
+   "if": "ex-app02",
+   "title": "app02 #1 コマンド：テーブルを作るマイグレーションを作る",
+   "do": [
+    {
+     "kind": "cmd",
+     "cmd": "php artisan make:migration 《mg》",
+     "desc": "テーブル 《table》 を作る設計図のファイルを、database/migrations/ に新しく作る"
+    }
+   ]
+  },
+  {
+   "id": "st-app02-02",
+   "if": "ex-app02",
+   "title": "app02 #2 a 全部：マイグレーション",
+   "do": [
+    {
+     "kind": "replace",
+     "from": "mg-main"
+    }
+   ]
+  },
+  {
+   "id": "st-app02-03",
+   "if": "ex-app02",
+   "title": "app02 #3 コマンド：マイグレーションを実行する",
+   "do": [
+    {
+     "kind": "cmd",
+     "cmd": "php artisan migrate",
+     "desc": "設計図どおりに、DB にテーブル 《table》 を作る"
+    }
+   ]
+  },
+  {
+   "id": "st-app02-04",
+   "if": "ex-app02",
+   "title": "app02 #4〜5 コマンド→a 全部：モデル",
+   "do": [
+    {
+     "kind": "cmd",
+     "cmd": "php artisan make:model 《model》",
+     "desc": "モデル 《model》 のファイルを、app/Models/ に新しく作る"
+    },
+    {
+     "kind": "replace",
+     "from": "model-main"
+    }
+   ]
+  },
+  {
+   "id": "st-app02-05",
+   "if": "ex-app02",
+   "title": "app02 #6〜7 コマンド→a 全部：決まり",
+   "do": [
+    {
+     "kind": "cmd",
+     "cmd": "php artisan make:request 《req》",
+     "desc": "決まり 《req》 のファイルを、app/Http/Requests/ に新しく作る"
+    },
+    {
+     "kind": "replace",
+     "from": "req-main"
+    }
+   ]
+  },
+  {
+   "id": "st-app02-06",
+   "if": "ex-app02",
+   "title": "app02 #8〜9 コマンド→a 全部：コントローラー",
+   "do": [
+    {
+     "kind": "cmd",
+     "cmd": "php artisan make:controller 《ctrl》",
+     "desc": "コントローラー 《ctrl》 のファイルを、app/Http/Controllers/ に新しく作る"
+    },
+    {
+     "kind": "replace",
+     "from": "ctl-main"
+    }
+   ]
+  },
+  {
+   "id": "st-app02-07",
+   "if": "ex-app02",
+   "title": "app02 #10 b：ルートの use の行",
+   "do": [
+    {
+     "kind": "add",
+     "path": "routes/web.php",
+     "at": "uses",
+     "code": [
+      {
+       "tag": "php-use",
+       "set": {
+        "cls": "App\\Http\\Controllers\\《ctrl》"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "st-app02-08",
+   "if": "ex-app02",
+   "title": "app02 #11 a：ルートの並び",
+   "do": [
+    {
+     "kind": "edit",
+     "pick": "routes-list",
+     "sec": "routes",
+     "path": "routes/web.php",
+     "find": "Route::get('/', function () {",
+     "nouses": true
+    }
+   ]
+  },
+  {
+   "id": "st-app02-09",
+   "if": "ex-app02",
+   "title": "app02 #12 b 新規：外枠の画面",
+   "do": [
+    {
+     "kind": "new",
+     "from": "view-layout"
+    }
+   ]
+  },
+  {
+   "id": "st-app02-10",
+   "if": "ex-app02",
+   "title": "app02 #13 b 新規：一覧の画面",
+   "do": [
+    {
+     "kind": "new",
+     "from": "view-index"
+    }
+   ]
+  },
+  {
+   "id": "st-app02-11",
+   "if": "ex-app02",
+   "title": "app02 #14 b 新規：画面の CSS",
+   "do": [
+    {
+     "kind": "css",
+     "screens": [
+      {
+       "from": "view-layout"
+      },
+      {
+       "from": "view-index"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "st-app02-12",
+   "if": "ex-app02",
+   "title": "app02 #15 git：保存して送る",
+   "do": [
+    {
+     "kind": "cmd",
+     "tag": "cmd-git-add",
+     "set": {
+      "path": "."
+     }
+    },
+    {
+     "kind": "cmd",
+     "tag": "cmd-git-commit",
+     "set": {
+      "msg": "《msg》"
+     }
+    },
+    {
+     "kind": "cmd",
+     "tag": "cmd-git-push",
+     "set": {
+      "branch": "feature/《branch》"
+     }
+    }
+   ]
+  },
+  {
+   "id": "st-app02-13",
+   "if": "ex-app02",
+   "title": "app02 #16 確かめる：一覧・作成・更新・削除",
+   "do": [
+    {
+     "kind": "check",
+     "open": "http://localhost/",
+     "expect": [
+      "入力欄と「《b_create》」のボタンが出る",
+      "入れて「《b_create》」を押すと一覧に出て、緑の帯に「《f_store》」が出る",
+      "一覧の欄を書き換えて「《b_update》」を押すと変わる。「《b_delete》」で消える",
+      "空のまま「《b_create》」を押すと、赤の帯に決まりの文言（例：《msgs|col:text|first》）が出る",
+      "上の帯が黒く、ボタンに色が付いている（見た目が崩れていない）"
+     ]
+    }
+   ]
+  }
+ ]
+}
