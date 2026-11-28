@@ -206,7 +206,7 @@ const ELSE_NAMES=()=>DICT.tags.filter(t=>t.else_name).map(t=>t.else_name);
 const subTags=id=>{const t=T(id);return [...(t.chains||[]),...(t.inner||[])]};
 function secTags(sec){const ids=new Set(sec.tags);const add=id=>subTags(id).forEach(c=>{if(!ids.has(c)){ids.add(c);add(c)}});sec.tags.forEach(add);return [...ids]}
 /* メモの名前から札を探す：上の札がつなげる札・中に入れる札 → 段の札 → 段の中の全部、の順 */
-function findByName(name,pt,sec){return [...(pt?subTags(pt.id):[]),...sec.tags,...secTags(sec),...(ROLE('use')?[ROLE('use')]:[])].find(x=>T(x)&&T(x).name===name)}
+function findByName(name,pt,sec,emb){return [...(pt?subTags(pt.id):[]),...sec.tags,...secTags(sec),...(ROLE('use')?[ROLE('use')]:[]),...(emb||[])].find(x=>T(x)&&T(x).name===name)}
 function newNode(id,arr){const t=T(id);const o={};t.slots.forEach((s,i)=>{o[s.key]=arr&&arr[i]!==undefined?arr[i]:(s.default==null?'':s.default)});return {tag:id,o,kids:[]}}
 /* 選ぶ穴の値：「開く」「get」「開く（get）」のどれで書いても、コードの値にそろえる */
 function optNorm(s,v){
@@ -219,6 +219,8 @@ const inlineRe=tg=>new RegExp('^'+tg.slots.map((s,i)=>s.label.replace(/[.*+?^${}
 const optShow=(s,v)=>{if(!s||!s.options)return v;const o=s.options.find(o=>optV(o)===v);return o&&o.label?`${o.label}（${v}）`:v};
 function parseSecLines(lines,sec,lang){
  const ids=secTags(sec);
+ /* 埋め込みの言語の札（Blade の <script> の中の JS など）も、名前で探せるようにする。外の言語の札が先 */
+ const emb=embedIdsOf(lang);
  const root={kids:[]},stack=[{n:root,d:-1,key:'kids'}];
  lines.forEach(raw=>{if(!raw.trim())return;
   const d=Math.floor(raw.match(/^ */)[0].length/2),t=raw.trim();
@@ -237,7 +239,7 @@ function parseSecLines(lines,sec,lang){
   /* 1行にラベル付きで並べた札（「カラム：name　値：'仕事'」など） */
   const inl=[...ids,...(pt&&pt.kv?[pt.kv]:[])].map(T).find(tg=>tg.memo==='inline'&&inlineRe(tg).test(t));
   if(inl){const m=t.match(inlineRe(inl));const node=newNode(inl.id,m.slice(1).map((v,k)=>optNorm(inl.slots[k],v.trim())));top.n[top.key].push(node);stack.push({n:node,d,key:'kids'});return}
-  const id=findByName(name,pt,sec);
+  const id=findByName(name,pt,sec,emb);
   let node;
   if(id){const tg=T(id),sl=tg.slots;
    if(tg.memo==='items')node=newNode(id,[]);
@@ -478,11 +480,13 @@ function rewriteNodes(ns){
  });
 }
 /* コードの中から札を探して、入れ子の木にする。ファイル・メソッド・1行のどれでも、これを使う */
-function parseNodes(raw,items,mark,lang){
+/* forbid：埋め込みの所（[始め, 終わり] の並び）。札の当たった所がそこにかかる物は使わない */
+function parseNodes(raw,items,mark,lang,forbid){
  const Q=LR(lang).strings;const src=Q&&Q.length?maskStr(raw,Q):raw;const SC=LR(lang).self_close;
  const found=[];
  items.forEach(({id,sec})=>{const t=T(id);if(!t||t.kind==='chain'||t.kind==='chain_block')return;
   matchAll(t,(t.kind==='block'||t.kind==='if')?'open':'code',src,raw).forEach(x=>{x.sec=sec;found.push(x)})});
+ if(forbid&&forbid.length)for(let i=found.length-1;i>=0;i--){const x=found[i];if(forbid.some(([a,b])=>x.start<b&&x.end>a))found.splice(i,1)}
  /* 穴の中身が行をまたいだ物（ml）は、同じ所から始まる囲む札（block・if）が当たる時は使わない（例：Task::create([ … ]) は「保存する（カラムごと）」で読む） */
  const blockAt=new Set(found.filter(x=>!x.ml&&(x.t.kind==='block'||x.t.kind==='if')).map(x=>x.start));
  for(let i=found.length-1;i>=0;i--)if(found[i].ml&&blockAt.has(found[i].start))found.splice(i,1);
@@ -552,13 +556,54 @@ function unknownLines(code,src,cov,skel,lang){
 }
 /* ファイルより小さいもの（メソッド・1行）を読む。札の束はファイルと同じものを使う */
 function forwardSnippet(code,sec,lang){
- const src=stripComments(code.replace(/\r/g,''),lang);
+ const raw=code.replace(/\r/g,''),src0=stripComments(raw,lang);
+ const emb=embedRanges(src0,lang),src=blankEmbeds(src0,emb);
  const cov=new Uint8Array(src.length);const mark=(a,b)=>{for(let i=a;i<b;i++)cov[i]=1};
- const nodes=parseNodes(src,sec.tags.map(id=>({id,sec:sec.key})),mark,lang);
- return {nodes,unknown:unknownLines(code,src,cov,[],lang),src,lang};
+ const nodes=parseNodes(src,sec.tags.map(id=>({id,sec:sec.key})),mark,lang,emb.map(r=>[r.a,r.b]));
+ const notRead=emb.length?readEmbeds(raw,emb,nodes,sec.key,mark):[];
+ return {nodes,unknown:unknownLines(code,src0,cov,[],lang),src,lang,notRead};
+}
+/* ===== ファイルに埋め込んだ別の言語（Blade の <script> の中の JS など） =====
+   埋め込みの決まりは、②の lang_rules の embeds（[{open, close, lang}]）に書く。
+   ファイルの種類は外のファイルのまま。開き（open）と閉じ（close）の間の行だけを、lang の読み方の決まりと札で読む。
+   lang の読み方の決まり（lang_rules）がまだ無い時は、その行を外の言語として読まず、「まだ読めない行」として分けて出す */
+function embedRanges(src,lang){
+ const out=[];
+ (LR(lang).embeds||[]).forEach(e=>{if(!e||!e.open||!e.close||!e.lang)return;let o,c;try{o=new RegExp(e.open,'gi');c=new RegExp(e.close,'gi')}catch(_){return}
+  let m;while((m=o.exec(src))){if(!m[0].length){o.lastIndex++;continue}const a=m.index+m[0].length;c.lastIndex=a;const z=c.exec(src);const b=z?z.index:src.length;
+   if(!out.some(r=>a<r.b&&r.a<b))out.push({a,b,lang:e.lang});o.lastIndex=z?z.index+z[0].length:src.length}});
+ return out.sort((x,y)=>x.a-y.a);
+}
+const hasRules=lg=>!!(DICT.lang_rules&&DICT.lang_rules[lg]);
+/* 埋め込みの言語で読む札：その言語の技術が1行を読む時のファイルの種類の段の札。無ければ、その言語の札の全部 */
+function embedTags(lg){const t=TECHS().find(x=>x.lang===lg),s=linesSec(t);if(s)return s.tags;return (DICT.tags||[]).filter(x=>x.lang===lg&&x.kind!=='chain'&&x.kind!=='chain_block').map(x=>x.id)}
+/* 外のファイルの言語が埋め込みで使う札（メモを逆向きに読む時に、名前で探す先に足す） */
+const embedIdsOf=lang=>(LR(lang).embeds||[]).filter(e=>e&&hasRules(e.lang)).flatMap(e=>embedTags(e.lang));
+/* 埋め込みの所を、同じ長さの空白にした写し（外の言語の札と欄は、この写しで読む） */
+const blankEmbeds=(src,emb)=>emb.reduce((s,r)=>s.slice(0,r.a)+s.slice(r.a,r.b).replace(/[^\n]/g,' ')+s.slice(r.b),src);
+/* 埋め込みの所を読んで、外のファイルの札の木に入れる。読めない所は notRead に分ける */
+function readEmbeds(raw,emb,tops,defSec,mark){
+ const notRead=[];
+ emb.forEach(r=>{
+  if(!hasRules(r.lang)){mark(r.a,r.b);const L=raw.slice(r.a,r.b).split('\n').map(l=>l.trim()).filter(Boolean);if(L.length)notRead.push({lang:r.lang,lines:L});return}
+  const inner=stripComments(raw.slice(r.a,r.b),r.lang);
+  const ns=parseNodes(inner,embedTags(r.lang).map(id=>({id,sec:null})),(x,y)=>mark(r.a+x,r.a+y),r.lang);
+  const shift=n=>{if(typeof n.start==='number'){n.start+=r.a;n.end+=r.a}};ns.forEach(shift);
+  /* 入れる先：埋め込みの所を中に持つ一番内側の囲みの札（<script> の札など）。無ければ、前にある札と同じ段 */
+  ns.forEach(x=>{
+   let best=null,size=Infinity,where=null;
+   const tryR=(b,rg,w)=>{if(rg&&x.start>=rg[0]&&x.end<=rg[1]&&rg[1]-rg[0]<size){best=b;size=rg[1]-rg[0];where=w}};
+   flat(tops).forEach(b=>{if(b===x)return;tryR(b,b.inner,'kids');tryR(b,b.elsR,'els');(b._elifR||[]).forEach((rg,ei)=>tryR(b,rg,ei))});
+   if(best){const arr=typeof where==='number'?best.elifs[where].kids:(best[where]=best[where]||[]);arr.push(x);arr.sort((p,q)=>(p.start||0)-(q.start||0));return}
+   const prev=tops.filter(t=>t.start<=x.start).pop();x.sec=prev?prev.sec:defSec;tops.push(x);tops.sort((p,q)=>p.start-q.start)});
+ });
+ return notRead;
 }
 function forwardFile(f,code){
- const src=stripComments(code.replace(/\r/g,''),f.lang);
+ const raw=code.replace(/\r/g,'');
+ const src0=stripComments(raw,f.lang);
+ /* 埋め込みの所は、外の言語では読まない（同じ長さの空白にした写しで、外の札と欄を読む） */
+ const emb=embedRanges(src0,f.lang),src=blankEmbeds(src0,emb);
  const cov=new Uint8Array(src.length);const mark=(a,b)=>{for(let i=a;i<b;i++)cov[i]=1};
  const vals={},fieldVia={},fieldOrig={};
  f.fields.forEach(fd=>{vals[fd.key]='';
@@ -571,7 +616,9 @@ function forwardFile(f,code){
   if(!fd.reads&&fd.default!=null)vals[fd.key]=fd.default});
  const items=f.sections.flatMap(sec=>sec.tags.map(id=>({id,sec:sec.key})));
  const secs={};f.sections.forEach(s=>secs[s.key]=[]);
- parseNodes(src,items,mark,f.lang).forEach(x=>secs[x.sec].push(x));
+ const tops=parseNodes(src,items,mark,f.lang,emb.map(r=>[r.a,r.b]));
+ const notRead=emb.length?readEmbeds(raw,emb,tops,f.sections[0].key,mark):[];
+ tops.forEach(x=>secs[x.sec].push(x));
  /* 囲みを項目に変える（ルートの「ログインした人だけ」→ 各ルートの「使える人」）／古い書き方を直す（DB::table → Eloquent） */
  f.sections.forEach(sec=>{
   let ns=secs[sec.key];
@@ -590,8 +637,9 @@ function forwardFile(f,code){
  }
  const skel=[];
  [...(f.code||[]),...(f.patches||[]).flatMap(p=>p.code),...(f.skel_reads||[])].forEach(x=>{const s=typeof x==='string'?x:x.t;if(/《@/.test(s)||!s.trim())return;try{skel.push(new RegExp('^\\s*'+tplRegex(s.trim(),{}).re+'\\s*$'))}catch(e){}});
- const unknown=unknownLines(code,src,cov,skel,f.lang);
- return {vals,secs,unknown,fieldVia,fieldOrig,src};
+ /* 読み残しの行は、埋め込みの所も含めて、空白にする前の写し（src0）で拾う */
+ const unknown=unknownLines(code,emb.length?src0:src,cov,skel,f.lang);
+ return {vals,secs,unknown,fieldVia,fieldOrig,src,notRead};
 }
 /* 部品の意味（1行の中に含まれていたら説明を足す） */
 function partsOf(text,lang,at){
