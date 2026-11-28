@@ -45,7 +45,8 @@ function trHtml(trs,lang,noParts){
   if(x.tool)return `<li ${pad}><code>${esc(x.orig||x.name)}</code> → <span class="miss">${esc(TOOL())} ${esc(x.name)}（まだ辞書に無い）</span></li>`;
   const shown=x.els?(x.orig||x.code):(x.orig||x.code);
   const alt=x.unclosed?`<span class="alt"><span class="miss">閉じが見つかりません（閉じ忘れかも）</span></span>`:x.note?`<span class="alt">${esc(x.note)}</span>`:x.via?`<span class="alt">${esc(DICT.via_label||'')}<code>${esc(x.code)}</code></span>`:'';
-  const pts=x.els||noParts?[]:partsOf(shown,lang,'file');
+  /* 埋め込みの言語の札（Blade の <script> の中の JS など）は、その言語の部品と、外のファイルの言語の部品（@json など）の両方を見る */
+  const pts=x.els||noParts?[]:(x.tag.lang&&x.tag.lang!==lang?[...partsOf(shown,x.tag.lang,'file'),...partsOf(shown,lang,'file')].filter((p,i,a)=>a.findIndex(q=>q.id===p.id&&q.code===p.code)===i):partsOf(shown,lang,'file'));
   return `<li ${pad}><code>${esc(shown)}</code> → ${esc(x.tr)}【${esc(x.tag.name)}】${fromMark(x.tag)}${idb(x.tag.id)}${alt}${pts.map(p=>`<span class="pt">・<code>${esc(p.code)}</code> → ${esc(p.meaning)}${idb(p.id)}</span>`).join('')}</li>`}).join('')}</ul>`;
 }
 function fieldTr(f,vals,via){
@@ -98,6 +99,11 @@ function linesView(f,r){
 <h3>1行ごとの訳</h3><ul class="trl ft">${fl}${opens}</ul>${trs.length?trHtml(trs,f.lang):''}`+
  (r.unknown.length?`<h3>辞書にない行</h3>${missHtml(r.unknown)}`:'');
 }
+/* 埋め込みの所（Blade の <script> の中など）のうち、その言語の読み方の決まりがまだ無くて読んでいない行。未登録の一覧には入れない */
+function notReadHtml(nr,lang){
+ const O=LANG(lang);
+ return (nr||[]).map(x=>`<h3>${esc(LANG(x.lang))} の行（まだ読めません）</h3><pre>${esc(x.lines.join('\n'))}</pre><p class="note">${esc(O)}の中に埋め込んだ ${esc(LANG(x.lang))} です。${esc(O)}として読まず、${esc(LANG(x.lang))} として読む所です。土台（dict/tech/）に ${esc(LANG(x.lang))} の読み方の決まりが無いので、まだ読んでいません。未登録の一覧には入れません。メモと完成コードには入りません。</p>`).join('');
+}
 function forwardView(f,v){
  const r=forwardFile(f,v);
  r.unknown.forEach(addMissing);
@@ -110,6 +116,7 @@ function forwardView(f,v){
 <h3>読み方</h3><ul class="trl ft">${fieldTr(f,r.vals,r.fieldVia)}</ul>${trHtml(trs,f.lang)}`+
  unclosedHtml(all)+
  (r.unknown.length?`<h3>辞書にない行</h3>${missHtml(r.unknown,'未登録の一覧に残しました。メモと完成コードには入りません。')}`:'')+
+ notReadHtml(r.notRead,f.lang)+
  (LR(f.lang).css?cssFromScreenHtml(v.replace(/\r/g,'').split('\n'),all,f.lang):'');
 }
 
@@ -147,7 +154,7 @@ ${f.fields.length?`<div class="tagbox"><div class="vh">ファイル全体</div>$
 /* ---------- 1行：正向き ---------- */
 function lineView(v){
  const r=forwardLines(v);r.unknown.forEach(addMissing);addTools(r.nodes);
- if(!r.nodes.length)return missHtml(r.unknown);
+ if(!r.nodes.length){const nr=notReadHtml(r.notRead,r.lang);return nr?(r.unknown.length?missHtml(r.unknown):'')+nr:missHtml(r.unknown)}
  const trs=[];renderSec(r.nodes,'',trs,0);
  const top=trs.filter(x=>x.depth===0&&!x.miss&&!x.tool),inner=trs.filter(x=>x.depth>0||x.miss||x.tool);
  const parts=[];top.forEach(x=>partsOf(x.orig||x.code,r.lang,'line').forEach(p=>{if(!parts.some(q=>q.id===p.id&&q.code===p.code))parts.push(p)}));
@@ -155,7 +162,8 @@ function lineView(v){
   (inner.length?`<h3>中の行</h3>${trHtml(inner,r.lang)}`:'')+
   (parts.length?`<h3>部品ごとの意味</h3><ul>${parts.map(p=>`<li><code>${esc(p.code)}</code> → ${esc(p.meaning)}${idb(p.id)}</li>`).join('')}</ul>`:'')+
   unclosedHtml(r.nodes)+
-  (r.unknown.length?`<h3>辞書にない行</h3>${missHtml(r.unknown)}`:'');
+  (r.unknown.length?`<h3>辞書にない行</h3>${missHtml(r.unknown)}`:'')+
+  notReadHtml(r.notRead,r.lang);
 }
 
 /* ---------- メソッド：正向き ---------- */

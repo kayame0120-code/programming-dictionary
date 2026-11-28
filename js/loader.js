@@ -196,7 +196,11 @@ function shapeCheck(d,org){
   if(isObj(r.pair))['head','after','elif_after','else_not'].forEach(k=>{if(r.pair[k]!=null)reCheck(r.pair[k],`${w} の pair.${k}`)});
   if(isObj(r.chain)&&r.chain.after!=null)reCheck(r.chain.after,`${w} の chain.after`);
   if(isObj(r.closure)&&r.closure.end!=null)reCheck(r.closure.end,`${w} の closure.end`);
-  if(isObj(r.css))['tag_re','class_re','skip_class','layout','own'].forEach(k=>{if(r.css[k]!=null)reCheck(r.css[k],`${w} の css.${k}`)});});
+  if(isObj(r.css))['tag_re','class_re','skip_class','layout','own'].forEach(k=>{if(r.css[k]!=null)reCheck(r.css[k],`${w} の css.${k}`)});
+  /* 埋め込み（embeds）：開き・閉じ・言語が要る。言語の読み方の決まりが無い時は帯にしない（画面の結果に「まだ読めない行」として出す） */
+  if(r.embeds!=null){if(!Array.isArray(r.embeds))add(`${w} の embeds は、[{open, close, lang}] の並びにしてください`);
+   else r.embeds.forEach((e,i)=>{if(!need(e,['open','close','lang'],`${w} の embeds（${i+1}件目）`))return;reCheck(e.open,`${w} の embeds（${i+1}件目）の open`,'gi');reCheck(e.close,`${w} の embeds（${i+1}件目）の close`,'gi');
+    if(typeof e.lang!=='string')add(`${w} の embeds（${i+1}件目）の lang は、言語の名前（文字）にしてください`);else if(e.lang===lg)add(`${w} の embeds（${i+1}件目）の lang が、外の言語 ${lg} と同じです`)})}});
  Object.entries(d.word_forms||{}).forEach(([k,v])=>reCheck(v,`言い換えの表の形 ${k}`));
  Object.entries(d.unfilters||{}).forEach(([k,v])=>{if(isObj(v)&&v.items!=null)reCheck(v.items,`元の形に戻す決まり ${k}`,'g')});
 
